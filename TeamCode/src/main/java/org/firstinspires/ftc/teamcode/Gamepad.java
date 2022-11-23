@@ -125,7 +125,6 @@ public class Gamepad extends LinearOpMode {
             BackRight.setPower(-pivot + vertical + horizontal);
             FrontLeft.setPower(pivot + vertical + horizontal);
             BackLeft.setPower(pivot + (vertical - horizontal));
-
             //intake power will be constant
 
             if (gamepad2.right_bumper) {
@@ -170,8 +169,6 @@ public class Gamepad extends LinearOpMode {
                 leftIntakeMotor.setPower(0.0);
             }
             if(gamepad1.left_trigger>0){
-
-
                 rightIntakeMotor.setPower(-1.0);
                 leftIntakeMotor.setPower(1.0);
             }
@@ -180,26 +177,41 @@ public class Gamepad extends LinearOpMode {
                 rightIntakeMotor.setPower(0.0);
                 leftIntakeMotor.setPower(0.0);
             }
-            if(gamepad2.b){
-                myGoToHeightPOS(-800,1);
-            }else{
-                telemetry.update();
+            //I am now working with the slide.
+            leftSlide.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            int v_leftSlidePosition = leftSlide.getCurrentPosition();
+            telemetry.addData("Left Position", v_leftSlidePosition);
+            int v_rightSlidePosition = rightSlide.getCurrentPosition();
+            telemetry.addData("Right Position", v_rightSlidePosition);
+            telemetry.update();
+
+            //to go up in left slide, lower the value; to go down in left slide, increase the value.
+            //go go up in right slide, increase the value; to go down in right slide, decrease the value.
+            if(gamepad2.b) {
+                myGoToHeightPOS(-1000, 1);
+            }
+            if(gamepad2.a){
+
+                myGoToHeightPOS(400, 1);
             }
         }
     }
-    private void myGoToHeightPOS(int slidePOS, double motorPower) {
-        leftSlide.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        rightSlide.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    public void myGoToHeightPOS(int slidePOS, double motorPower) {
+        telemetry.addData("slidePOS", slidePOS);
+        telemetry.update();
+        telemetry.addData("motorPower", motorPower);
+        telemetry.update();
         leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        //rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         leftSlide.setTargetPosition((slidePOS));
-        rightSlide.setTargetPosition(slidePOS);
+        //rightSlide.setTargetPosition(slidePOS);
         leftSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        rightSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        //rightSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftSlide.setPower(motorPower);
-        rightSlide.setPower(motorPower);
+        //rightSlide.setPower(motorPower);
         leftSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        rightSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        //rightSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
     }
 }
