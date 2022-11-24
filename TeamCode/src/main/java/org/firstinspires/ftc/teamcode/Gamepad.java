@@ -106,12 +106,15 @@ public class Gamepad extends LinearOpMode {
         FrontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         BackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftSlide.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
         waitForStart();
         runtime.reset();
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-
+            //movement code
             horizontal = gamepad1.left_stick_x;
             pivot = gamepad1.right_stick_x;
             vertical = -gamepad1.left_stick_y;
@@ -130,16 +133,14 @@ public class Gamepad extends LinearOpMode {
             if (gamepad2.right_bumper) {
                 leftSlide.setPower(0.5);
                 rightSlide.setPower(0.5);
-            }
-            else {
+            }else{
                 leftSlide.setPower(0);
                 rightSlide.setPower(0);
             }
             if (gamepad2.left_bumper) {
                 leftSlide.setPower(-0.5);
                 rightSlide.setPower(-0.5);
-            }
-            else {
+            }else{
                 leftSlide.setPower(0);
                 rightSlide.setPower(0);
             }
@@ -164,23 +165,19 @@ public class Gamepad extends LinearOpMode {
             if(gamepad1.right_trigger>0){
                 rightIntakeMotor.setPower(1.0);
                 leftIntakeMotor.setPower(-1.0);
-            }
-            else
-            {
+            }else{
                 rightIntakeMotor.setPower(0.0);
                 leftIntakeMotor.setPower(0.0);
             }
             if(gamepad1.left_trigger>0){
                 rightIntakeMotor.setPower(-1.0);
                 leftIntakeMotor.setPower(1.0);
-            }
-            else
-            {
+            }else{
                 rightIntakeMotor.setPower(0.0);
                 leftIntakeMotor.setPower(0.0);
             }
             //I am now working with the slide.
-            leftSlide.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
             int v_leftSlidePosition = leftSlide.getCurrentPosition();
             telemetry.addData("Left Position", v_leftSlidePosition);
             int v_rightSlidePosition = rightSlide.getCurrentPosition();
@@ -201,21 +198,16 @@ public class Gamepad extends LinearOpMode {
         }
     }
     public void myGoToHeightPOS(int slidePOS, double motorPower) {
+        //to find slide position and motor position
         telemetry.addData("slidePOS", slidePOS);
         telemetry.update();
         telemetry.addData("motorPower", motorPower);
         telemetry.update();
+        //base encoder code
         leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        //rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         leftSlide.setTargetPosition((slidePOS));
-        //rightSlide.setTargetPosition(slidePOS);
         leftSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        //rightSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftSlide.setPower(motorPower);
-        //rightSlide.setPower(motorPower);
-        leftSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        //rightSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
     }
 }
