@@ -107,7 +107,9 @@ public class Gamepad extends LinearOpMode {
         BackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
 
         leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         leftSlide.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightSlide.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         waitForStart();
         runtime.reset();
@@ -185,15 +187,14 @@ public class Gamepad extends LinearOpMode {
             telemetry.update();
 
             //to go up in left slide, lower the value; to go down in left slide, increase the value.
-            //go go up in right slide, increase the value; to go down in right slide, decrease the value.
+            //to go up in right slide, increase the value; to go down in right slide, decrease the value.
 
             //macros
             if(gamepad2.b) {
                 myGoToHeightPOS(-1000, 1);
             }
             if(gamepad2.a){
-
-                myGoToHeightPOS(400, 1);
+                myGoToHeightPOS(1000, 1);
             }
         }
     }
@@ -205,9 +206,15 @@ public class Gamepad extends LinearOpMode {
         telemetry.update();
         //base encoder code
         leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        leftSlide.setTargetPosition((slidePOS));
+        //rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftSlide.setTargetPosition((-slidePOS));
         leftSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftSlide.setPower(motorPower);
+
+        if(slidePOS>=3500 || slidePOS<=-3500){
+            leftSlide.setPower(0.0);
+            telemetry.addData("Maximum Reached", slidePOS);
+            telemetry.update();
+        }
     }
 }
