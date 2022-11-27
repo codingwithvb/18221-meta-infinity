@@ -51,7 +51,7 @@ import com.qualcomm.robotcore.util.Range;
  * Use Android Studio to Copy this Class, and Paste it into your team's code folder with a new name.
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
-
+//*****Vedanta we called this class JustReadTheInstructions while testing ;)*****
 @TeleOp(name="Gamepad", group="Linear Opmode")
 //@Disabled
 public class Gamepad extends LinearOpMode {
@@ -105,6 +105,7 @@ public class Gamepad extends LinearOpMode {
 
         FrontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         BackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftSlide.setDirection(DcMotorSimple.Direction.REVERSE);
 
         leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -133,21 +134,12 @@ public class Gamepad extends LinearOpMode {
 
             //if statements are for the slide and the power.
             if (gamepad2.right_bumper) {
-                leftSlide.setPower(0.5);
-                rightSlide.setPower(0.5);
-            }else{
-                leftSlide.setPower(0);
-                rightSlide.setPower(0);
-            }
-            if (gamepad2.left_bumper) {
-                leftSlide.setPower(-0.5);
-                rightSlide.setPower(-0.5);
-            }else{
-                leftSlide.setPower(0);
-                rightSlide.setPower(0);
+                myGoToHeightPOS(100, 1);
+            }else if (gamepad2.left_bumper){
+                myGoToHeightPOS(-100, 1);
             }
             //if statements are for the servo position whether it be arm or claw.
-            if (gamepad2.b){
+            /*if (gamepad2.b){
                 armServoPosition = 0.0;
                 armServo.setPosition(armServoPosition);
             }
@@ -162,7 +154,7 @@ public class Gamepad extends LinearOpMode {
             else if (gamepad2.x){
                 clawServoPosition = 1.0;
                 clawServo.setPosition(clawServoPosition);
-            }
+            }*/
             //if statements are for intake motor
             if(gamepad1.right_trigger>0){
                 rightIntakeMotor.setPower(1.0);
@@ -172,11 +164,11 @@ public class Gamepad extends LinearOpMode {
                 leftIntakeMotor.setPower(0.0);
             }
             if(gamepad1.left_trigger>0){
+                rightIntakeMotor.setPower(-0);
+                leftIntakeMotor.setPower(0);
+            }else{
                 rightIntakeMotor.setPower(-1.0);
                 leftIntakeMotor.setPower(1.0);
-            }else{
-                rightIntakeMotor.setPower(0.0);
-                leftIntakeMotor.setPower(0.0);
             }
             //I am now working with the slide.
 
@@ -190,11 +182,22 @@ public class Gamepad extends LinearOpMode {
             //to go up in right slide, increase the value; to go down in right slide, decrease the value.
 
             //macros
-            if(gamepad2.b) {
-                myGoToHeightPOS(-1000, 1);
+            if(gamepad2.dpad_up) {
+                myGoToHeightPOS(3450, 1);
+            }
+            if(gamepad2.dpad_down){
+                myGoToHeightPOS(-3450, .5);
             }
             if(gamepad2.a){
-                myGoToHeightPOS(1000, 1);
+                armServo.setPosition(0.0);
+            }
+            if(gamepad2.x){
+                clawServo.setPosition(1.0);
+                sleep(700);
+                clawServo.setPosition(0.0);
+            }
+            if(gamepad2.b){
+                armServo.setPosition(1.0);
             }
         }
     }
@@ -206,8 +209,7 @@ public class Gamepad extends LinearOpMode {
         telemetry.update();
         //base encoder code
         leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        //rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        leftSlide.setTargetPosition((-slidePOS));
+        leftSlide.setTargetPosition((slidePOS));
         leftSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftSlide.setPower(motorPower);
 
