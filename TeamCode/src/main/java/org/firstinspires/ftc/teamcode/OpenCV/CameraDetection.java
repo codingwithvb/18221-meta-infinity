@@ -21,6 +21,7 @@
 
 package org.firstinspires.ftc.teamcode.OpenCV;
 
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -33,7 +34,7 @@ import org.openftc.easyopencv.OpenCvInternalCamera;
 
 import java.util.ArrayList;
 
-@TeleOp
+@Autonomous
 public class CameraDetection extends LinearOpMode
 {
     OpenCvCamera camera;
@@ -143,6 +144,20 @@ public class CameraDetection extends LinearOpMode
                 }
 
             }
+            /*if(tagOfInterest.id == left){
+                //left code
+                telemetry.addLine("Left");
+                telemetry.update();
+            }else if(tagOfInterest == null ||  tagOfInterest.id == middle){
+                //middle code
+                telemetry.addLine("Middle");
+                telemetry.update();
+            }else if(tagOfInterest.id == right){
+                //right code
+                telemetry.addLine("Right");
+                telemetry.update();
+            }*/
+
 
             telemetry.update();
             sleep(20);
@@ -168,10 +183,16 @@ public class CameraDetection extends LinearOpMode
 
         if(tagOfInterest.id == left){
             //left code
+            telemetry.addLine("Left");
+            telemetry.update();
         }else if(tagOfInterest == null || tagOfInterest.id == middle){
             //middle code
+            telemetry.addLine("Middle");
+            telemetry.update();
         }else if(tagOfInterest.id == right){
             //right code
+            telemetry.addLine("Right");
+            telemetry.update();
         }
 
         /* You wouldn't have this in your autonomous, this is just to prevent the sample from ending */

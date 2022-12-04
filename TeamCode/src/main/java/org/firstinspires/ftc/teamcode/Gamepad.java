@@ -35,6 +35,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
@@ -74,6 +75,8 @@ public class Gamepad extends LinearOpMode {
     Servo clawServo;
     Servo armServo;
 
+    TouchSensor touch;
+
     double clawServoPosition = 0.0;
     double armServoPosition = 1.0;
 
@@ -102,6 +105,8 @@ public class Gamepad extends LinearOpMode {
         armServo.setPosition(armServoPosition);
         clawServo = hardwareMap.servo.get("ClawServo");
         clawServo.setPosition(clawServoPosition);
+
+        touch = hardwareMap.touchSensor.get("Touch");
 
         FrontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         BackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -199,6 +204,9 @@ public class Gamepad extends LinearOpMode {
             if(gamepad2.b){
                 armServo.setPosition(1.0);
             }
+            if(touch.isPressed()) {
+                leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            }
         }
     }
     public void myGoToHeightPOS(int slidePOS, double motorPower) {
@@ -213,7 +221,7 @@ public class Gamepad extends LinearOpMode {
         leftSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftSlide.setPower(motorPower);
 
-        if(slidePOS>=3500 || slidePOS<=-3500){
+        if(slidePOS>=3500 || slidePOS<=-3500) {
             leftSlide.setPower(0.0);
             telemetry.addData("Maximum Reached", slidePOS);
             telemetry.update();
