@@ -75,9 +75,9 @@ public class Gamepad extends LinearOpMode {
     Servo clawServo;
     Servo armServo;
 
-    TouchSensor touch;
+    TouchSensor touchSensor;
 
-    double clawServoPosition = 0.0;
+    double clawServoPosition = 1.0;
     double armServoPosition = 1.0;
 
     double horizontal;
@@ -106,7 +106,7 @@ public class Gamepad extends LinearOpMode {
         clawServo = hardwareMap.servo.get("ClawServo");
         clawServo.setPosition(clawServoPosition);
 
-        touch = hardwareMap.touchSensor.get("Touch");
+        touchSensor = hardwareMap.touchSensor.get("Touch");
 
         FrontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         BackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -152,6 +152,7 @@ public class Gamepad extends LinearOpMode {
                 armServoPosition = 1.0;
                 armServo.setPosition(armServoPosition);
             }
+            */
             if (gamepad2.a){
                 clawServoPosition = 0.0;
                 clawServo.setPosition(clawServoPosition);
@@ -159,7 +160,7 @@ public class Gamepad extends LinearOpMode {
             else if (gamepad2.x){
                 clawServoPosition = 1.0;
                 clawServo.setPosition(clawServoPosition);
-            }*/
+            }
             //if statements are for intake motor
             if(gamepad1.right_trigger>0){
                 rightIntakeMotor.setPower(1.0);
@@ -172,8 +173,8 @@ public class Gamepad extends LinearOpMode {
                 rightIntakeMotor.setPower(-0);
                 leftIntakeMotor.setPower(0);
             }else{
-                rightIntakeMotor.setPower(-1.0);
-                leftIntakeMotor.setPower(1.0);
+                rightIntakeMotor.setPower(1.0);
+                leftIntakeMotor.setPower(-1.0);
             }
             //I am now working with the slide.
 
@@ -181,7 +182,6 @@ public class Gamepad extends LinearOpMode {
             telemetry.addData("Left Position", v_leftSlidePosition);
             int v_rightSlidePosition = rightSlide.getCurrentPosition();
             telemetry.addData("Right Position", v_rightSlidePosition);
-            telemetry.update();
 
             //to go up in left slide, lower the value; to go down in left slide, increase the value.
             //to go up in right slide, increase the value; to go down in right slide, decrease the value.
@@ -194,18 +194,28 @@ public class Gamepad extends LinearOpMode {
                 myGoToHeightPOS(-3450, .5);
             }
             if(gamepad2.a){
-                armServo.setPosition(0.0);
+                armServo.setPosition(0.25);
             }
+
             if(gamepad2.x){
                 clawServo.setPosition(1.0);
-                sleep(700);
+            }
+            if(gamepad2.y){
                 clawServo.setPosition(0.0);
             }
             if(gamepad2.b){
                 armServo.setPosition(1.0);
             }
-            if(touch.isPressed()) {
+
+
+            if(touchSensor.isPressed()){
                 leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                telemetry.addData("Touch Sensor Pressed", v_leftSlidePosition);
+                telemetry.update();
+            }else {
+                telemetry.addData("Not Pressed", v_leftSlidePosition);
+                telemetry.update();
             }
         }
     }
@@ -217,14 +227,18 @@ public class Gamepad extends LinearOpMode {
         telemetry.update();
         //base encoder code
         leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        leftSlide.setTargetPosition((slidePOS));
+        rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftSlide.setTargetPosition((slidePOS-50));
+        rightSlide.setTargetPosition(slidePOS);
+        leftSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftSlide.setPower(motorPower);
+        rightSlide.setPower(motorPower);
 
-        if(slidePOS>=3500 || slidePOS<=-3500) {
-            leftSlide.setPower(0.0);
-            telemetry.addData("Maximum Reached", slidePOS);
-            telemetry.update();
-        }
+        //if(slidePOS>=3500 || slidePOS<=-3500) {
+            //leftSlide.setPower(0.0);
+            //telemetry.addData("Maximum Reached", slidePOS);
+            //telemetry.update();
+       // }
     }
 }
