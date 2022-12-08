@@ -193,19 +193,28 @@ public class Gamepad extends LinearOpMode {
             if(gamepad2.dpad_down){
                 myGoToHeightPOS(-3450, .5);
             }
-            if(gamepad2.a){
+            //allows the servos to be controlled by one button per servo, instead of needing 2 per servo
+            if(gamepad2.x && clawServo.getPosition()==0.0)
+                clawServo.setPosition(1.0);
+            else if (gamepad2.x && clawServo.getPosition()==1.0)
+                clawServo.setPosition(0.0);
+            if(gamepad2.y && armServo.getPosition()==1.0)
                 armServo.setPosition(0.25);
-            }
+            else if (gamepad2.y && armServo.getPosition()==0.25)
+                armServo.setPosition(1.0);
 
-            if(gamepad2.x){
+            /*if(gamepad2.x){
                 clawServo.setPosition(1.0);
             }
             if(gamepad2.y){
                 clawServo.setPosition(0.0);
             }
+            if(gamepad2.a){
+                armServo.setPosition(0.25);
+            }
             if(gamepad2.b){
                 armServo.setPosition(1.0);
-            }
+            } */
 
 
             if(touchSensor.isPressed()){
