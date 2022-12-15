@@ -122,7 +122,7 @@ public class Gamepad extends LinearOpMode {
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-            //movement code
+            //movement code for the robot
             horizontal = gamepad1.left_stick_x;
             pivot = gamepad1.right_stick_x;
             vertical = -gamepad1.left_stick_y;
@@ -137,12 +137,6 @@ public class Gamepad extends LinearOpMode {
             FrontLeft.setPower(pivot + vertical + horizontal);
             BackLeft.setPower(pivot + (vertical - horizontal));
 
-            //if statements are for the slide and the power.
-            if (gamepad2.right_bumper) {
-                myGoToHeightPOS(100, 1);
-            }else if (gamepad2.left_bumper){
-                myGoToHeightPOS(-100, 1);
-            }
             //if statements are for the servo position whether it be arm or claw.
             /*if (gamepad2.b){
                 armServoPosition = 0.0;
@@ -176,12 +170,12 @@ public class Gamepad extends LinearOpMode {
                 rightIntakeMotor.setPower(1.0);
                 leftIntakeMotor.setPower(-1.0);
             }
-            //I am now working with the slide.
 
             int v_leftSlidePosition = leftSlide.getCurrentPosition();
             telemetry.addData("Left Position", v_leftSlidePosition);
             int v_rightSlidePosition = rightSlide.getCurrentPosition();
             telemetry.addData("Right Position", v_rightSlidePosition);
+            telemetry.update();
 
             //to go up in left slide, lower the value; to go down in left slide, increase the value.
             //to go up in right slide, increase the value; to go down in right slide, decrease the value.
@@ -189,9 +183,11 @@ public class Gamepad extends LinearOpMode {
             //macros
             if(gamepad2.dpad_up) {
                 myGoToHeightPOS(3450, 1);
+                //linear slide goes up for high junction
             }
             if(gamepad2.dpad_down){
                 myGoToHeightPOS(-3450, .5);
+                //linear slide goes down
             }
             //allows the servos to be controlled by one button per servo, instead of needing 2 per servo
             if(gamepad2.x && clawServo.getPosition()==0.0)
@@ -216,7 +212,6 @@ public class Gamepad extends LinearOpMode {
                 armServo.setPosition(1.0);
             } */
 
-
             if(touchSensor.isPressed()){
                 leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -231,7 +226,6 @@ public class Gamepad extends LinearOpMode {
     public void myGoToHeightPOS(int slidePOS, double motorPower) {
         //to find slide position and motor position
         telemetry.addData("slidePOS", slidePOS);
-        telemetry.update();
         telemetry.addData("motorPower", motorPower);
         telemetry.update();
         //base encoder code
@@ -244,10 +238,11 @@ public class Gamepad extends LinearOpMode {
         leftSlide.setPower(motorPower);
         rightSlide.setPower(motorPower);
 
-        //if(slidePOS>=3500 || slidePOS<=-3500) {
-            //leftSlide.setPower(0.0);
-            //telemetry.addData("Maximum Reached", slidePOS);
-            //telemetry.update();
-       // }
+        if(slidePOS>=3800 || slidePOS<=-3800) {
+            leftSlide.setPower(0.0);
+            rightSlide.setPower(0.0);
+            telemetry.addData("Maximum Reached", slidePOS);
+            telemetry.update();
+        }
     }
 }
