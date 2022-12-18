@@ -20,8 +20,8 @@ public class DriveConstants {
     /*
      * These are motor constants that should be listed online for your motors.
      */
-    public static final double TICKS_PER_REV = 384.5;
-    public static final double MAX_RPM = 312.0;
+    public static final double TICKS_PER_REV = 537.7;
+    public static final double MAX_RPM = 312;
 
     /*
      * Set RUN_USING_ENCODER to true to enable built-in hub velocity control using drive encoders.
@@ -45,7 +45,9 @@ public class DriveConstants {
      */
     public static double WHEEL_RADIUS = 48/25.4; // in
     public static double GEAR_RATIO = 1.0; // output (wheel) speed / input (motor) speed
-    public static double TRACK_WIDTH = 16.9; // in
+    public static double TRACK_WIDTH = 15.5; // in
+
+    //motor name 5203 series yellow jacket planetary: 5203-2402-0019
 
     /*
      * These are the feedforward parameters used to model the drive motor behavior. If you are using
