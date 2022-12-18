@@ -77,7 +77,7 @@ public class Gamepad extends LinearOpMode {
 
     TouchSensor touchSensor;
 
-    double clawServoPosition = 1.0;
+    double clawServoPosition = 0.5;
     double armServoPosition = 1.0;
 
     double horizontal;
@@ -138,23 +138,42 @@ public class Gamepad extends LinearOpMode {
             BackLeft.setPower(pivot + (vertical - horizontal));
 
             //if statements are for the servo position whether it be arm or claw.
-            /*if (gamepad2.b){
-                armServoPosition = 0.0;
+            /*if (gamepad2.x){
+                armServoPosition = 0.2;
                 armServo.setPosition(armServoPosition);
             }
             else if (gamepad2.y){
                 armServoPosition = 1.0;
                 armServo.setPosition(armServoPosition);
             }
-            */
             if (gamepad2.a){
-                clawServoPosition = 0.0;
+                clawServoPosition = 0.5;
                 clawServo.setPosition(clawServoPosition);
             }
-            else if (gamepad2.x){
+            else if (gamepad2.b){
                 clawServoPosition = 1.0;
                 clawServo.setPosition(clawServoPosition);
+            } */
+            if(gamepad2.a){
+                clawServo.setPosition(1.0);
+                sleep(500);
+                myGoToHeightPOS(500, 1.0);
+                armServo.setPosition(0.2);
+
             }
+            else if(gamepad2.b){
+                armServo.setPosition(1.0);
+                sleep(700);
+                myGoToHeightPOS(-500, .5);
+                clawServo.setPosition(0.5);
+            }
+            else if(gamepad2.x){
+                clawServo.setPosition(0.5);
+                sleep(500);
+                clawServo.setPosition(1.0);
+            }
+
+
             //if statements are for intake motor
             if(gamepad1.right_trigger>0){
                 rightIntakeMotor.setPower(1.0);
@@ -162,13 +181,6 @@ public class Gamepad extends LinearOpMode {
             }else{
                 rightIntakeMotor.setPower(0.0);
                 leftIntakeMotor.setPower(0.0);
-            }
-            if(gamepad1.left_trigger>0){
-                rightIntakeMotor.setPower(-0);
-                leftIntakeMotor.setPower(0);
-            }else{
-                rightIntakeMotor.setPower(1.0);
-                leftIntakeMotor.setPower(-1.0);
             }
 
             int v_leftSlidePosition = leftSlide.getCurrentPosition();
@@ -182,35 +194,13 @@ public class Gamepad extends LinearOpMode {
 
             //macros
             if(gamepad2.dpad_up) {
-                myGoToHeightPOS(3450, 1);
+                myGoToHeightPOS(2950, 1);
                 //linear slide goes up for high junction
             }
             if(gamepad2.dpad_down){
-                myGoToHeightPOS(-3450, .5);
+                myGoToHeightPOS(-2950, .5);
                 //linear slide goes down
             }
-            //allows the servos to be controlled by one button per servo, instead of needing 2 per servo
-            if(gamepad2.x && clawServo.getPosition()==0.0)
-                clawServo.setPosition(1.0);
-            else if (gamepad2.x && clawServo.getPosition()==1.0)
-                clawServo.setPosition(0.0);
-            if(gamepad2.y && armServo.getPosition()==1.0)
-                armServo.setPosition(0.25);
-            else if (gamepad2.y && armServo.getPosition()==0.25)
-                armServo.setPosition(1.0);
-
-            /*if(gamepad2.x){
-                clawServo.setPosition(1.0);
-            }
-            if(gamepad2.y){
-                clawServo.setPosition(0.0);
-            }
-            if(gamepad2.a){
-                armServo.setPosition(0.25);
-            }
-            if(gamepad2.b){
-                armServo.setPosition(1.0);
-            } */
 
             if(touchSensor.isPressed()){
                 leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -231,7 +221,7 @@ public class Gamepad extends LinearOpMode {
         //base encoder code
         leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        leftSlide.setTargetPosition((slidePOS-50));
+        leftSlide.setTargetPosition(slidePOS);
         rightSlide.setTargetPosition(slidePOS);
         leftSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
