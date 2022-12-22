@@ -24,6 +24,10 @@ package org.firstinspires.ftc.teamcode.OpenCV;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.openftc.apriltag.AprilTagDetection;
@@ -33,10 +37,27 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvInternalCamera;
 
 import java.util.ArrayList;
+import java.util.concurrent.ForkJoinPool;
 
 @Autonomous
 public class CameraDetection extends LinearOpMode
 {
+    DcMotor FrontRight;
+    DcMotor FrontLeft;
+    DcMotor BackRight;
+    DcMotor BackLeft;
+
+    DcMotor leftIntakeMotor;
+    DcMotor rightIntakeMotor;
+    DcMotor rightSlide;
+    DcMotor leftSlide;
+
+    Servo clawServo;
+    Servo armServo;
+
+    TouchSensor touchSensor;
+
+
     OpenCvCamera camera;
     AprilTagDetectionPipeline aprilTagDetectionPipeline;
 
@@ -64,6 +85,27 @@ public class CameraDetection extends LinearOpMode
     @Override
     public void runOpMode()
     {
+        FrontLeft  = hardwareMap.dcMotor.get("LeftFront");
+        FrontRight = hardwareMap.dcMotor.get("RightFront");
+        BackRight = hardwareMap.dcMotor.get("RightBack");
+        BackLeft = hardwareMap.dcMotor.get("LeftBack");
+
+        leftIntakeMotor = hardwareMap.dcMotor.get("LeftIntake");
+        rightIntakeMotor = hardwareMap.dcMotor.get("RightIntake");
+
+        leftSlide = hardwareMap.dcMotor.get("LeftSlide");
+        rightSlide = hardwareMap.dcMotor.get("RightSlide");
+
+        armServo = hardwareMap.servo.get("ArmServo");
+        armServo.setPosition(1.0);
+        clawServo = hardwareMap.servo.get("ClawServo");
+        clawServo.setPosition(1.0);
+
+        touchSensor = hardwareMap.touchSensor.get("Touch");
+
+
+
+
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
         aprilTagDetectionPipeline = new AprilTagDetectionPipeline(tagsize, fx, fy, cx, cy);
@@ -92,6 +134,15 @@ public class CameraDetection extends LinearOpMode
          */
         while (!isStarted() && !isStopRequested())
         {
+            FrontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+            BackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+            leftSlide.setDirection(DcMotorSimple.Direction.REVERSE);
+
+            FrontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            BackLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            BackRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            FrontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
             ArrayList<AprilTagDetection> currentDetections = aprilTagDetectionPipeline.getLatestDetections();
 
             if(currentDetections.size() != 0)
@@ -185,6 +236,7 @@ public class CameraDetection extends LinearOpMode
             //left code
             telemetry.addLine("Left");
             telemetry.update();
+            EverythingBeforePark();
         }else if(tagOfInterest == null || tagOfInterest.id == middle){
             //middle code
             telemetry.addLine("Middle");
@@ -196,7 +248,7 @@ public class CameraDetection extends LinearOpMode
         }
 
         /* You wouldn't have this in your autonomous, this is just to prevent the sample from ending */
-        while (opModeIsActive()) {sleep(20);}
+        //while (opModeIsActive()) {sleep(20);}
     }
 
     void tagToTelemetry(AprilTagDetection detection)
@@ -208,5 +260,68 @@ public class CameraDetection extends LinearOpMode
         telemetry.addLine(String.format("Rotation Yaw: %.2f degrees", Math.toDegrees(detection.pose.yaw)));
         telemetry.addLine(String.format("Rotation Pitch: %.2f degrees", Math.toDegrees(detection.pose.pitch)));
         telemetry.addLine(String.format("Rotation Roll: %.2f degrees", Math.toDegrees(detection.pose.roll)));
+    }
+    private void myGoToPOS(int LF, int LB, int RB, int RF, double motorPower) {
+     FrontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        BackLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        BackRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        FrontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+
+        FrontLeft.setTargetPosition(LF);
+        FrontRight.setTargetPosition(RF);
+        BackRight.setTargetPosition(RB);
+        BackLeft.setTargetPosition(LB);
+
+        FrontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        FrontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        BackRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        BackLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+
+        FrontLeft.setPower(motorPower);
+        FrontRight.setPower(motorPower);
+        BackRight.setPower(motorPower);
+        BackLeft.setPower(motorPower);
+      while (FrontLeft.isBusy() || FrontRight.isBusy() || BackRight.isBusy() || BackLeft.isBusy()) {
+          telemetry.addData("LeftFront", FrontLeft.getCurrentPosition());
+            telemetry.addData("RightFront", FrontRight.getCurrentPosition());
+            telemetry.addData("RightBack", BackRight.getCurrentPosition());
+            telemetry.addData("LeftBack", BackLeft.getCurrentPosition());
+           telemetry.addData("LeftFront", LF);
+           telemetry.addData("RightFront", RF);
+           telemetry.addData("RightBack", RB);
+           telemetry.addData("LeftBack", LB);
+           telemetry.update();
+      }
+    }
+    private void myGoToHeightPOS(int slidePOS, double motorPower) {
+        //to find slide position and motor position
+        leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftSlide.setTargetPosition(slidePOS);
+        rightSlide.setTargetPosition(slidePOS);
+        leftSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        rightSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        leftSlide.setPower(motorPower);
+        rightSlide.setPower(motorPower);
+        while(leftSlide.isBusy()) {
+            telemetry.addData("Slide", leftSlide.getCurrentPosition());
+            telemetry.update();
+        }
+    }
+    public void drop() {
+        clawServo.setPosition(0.5);
+        sleep(500);
+        clawServo.setPosition(1.0);
+}
+    public void EverythingBeforePark(){
+        //myGoToPOS(-2000,-2000,-2000,-2000,.2);
+        //myGoToPOS(-1000, -1000, 0, 0, .2);
+        myGoToHeightPOS(3450, .4);
+        armServo.setPosition(0.2);
+        sleep(800);
+        drop();
+        myGoToHeightPOS(-3450, .5);
     }
 }
