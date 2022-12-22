@@ -224,7 +224,7 @@ public class Gamepad extends LinearOpMode {
         leftSlide.setTargetPosition(slidePOS);
         rightSlide.setTargetPosition(slidePOS);
         leftSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        leftSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        rightSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftSlide.setPower(motorPower);
         rightSlide.setPower(motorPower);
 
