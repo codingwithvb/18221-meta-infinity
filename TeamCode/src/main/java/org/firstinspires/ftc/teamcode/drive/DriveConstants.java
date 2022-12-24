@@ -45,7 +45,7 @@ public class DriveConstants {
      */
     public static double WHEEL_RADIUS = 1.8898; // in
     public static double GEAR_RATIO = 1; // output (wheel) speed / input (motor) speed
-    public static double TRACK_WIDTH = 15.75; // in
+    public static double TRACK_WIDTH = 17.83 in
 
     //motor name 5203 series yellow jacket planetary: 5203-2402-0019
 
