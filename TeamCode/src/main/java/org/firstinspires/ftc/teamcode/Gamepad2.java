@@ -77,9 +77,6 @@ public class Gamepad2 extends LinearOpMode {
 
     TouchSensor touchSensor;
 
-    double clawServoPosition = 0.5;
-    double armServoPosition = 1.0;
-
     double horizontal;
     double vertical;
     double pivot;
@@ -102,9 +99,9 @@ public class Gamepad2 extends LinearOpMode {
         rightSlide = hardwareMap.dcMotor.get("RightSlide");
 
         armServo = hardwareMap.servo.get("ArmServo");
-        armServo.setPosition(armServoPosition);
+        armServo.setPosition(0.75);
         clawServo = hardwareMap.servo.get("ClawServo");
-        clawServo.setPosition(clawServoPosition);
+        clawServo.setPosition(0.65);
 
         touchSensor = hardwareMap.touchSensor.get("Touch");
 
@@ -142,7 +139,8 @@ public class Gamepad2 extends LinearOpMode {
             } else {
                 telemetry.addData("Digital Touch", "Is Not Pressed");
             }
-            telemetry.update();
+            //telemetry.addData("claw", clawServo.getPosition());
+            //telemetry.update();
 
             //movement code for the robot
             horizontal = gamepad1.left_stick_x;
@@ -163,14 +161,14 @@ public class Gamepad2 extends LinearOpMode {
             if(gamepad2.b){
                 clawServo.setPosition(1.0);
             }
-            else if(gamepad2.a){
-                clawServo.setPosition(0.5);
+            if(gamepad2.a){
+                clawServo.setPosition(0.65);
             }
-            else if(gamepad2.x){
-                armServo.setPosition(0.3);
+            if(gamepad2.x){
+                armServo.setPosition(0.1);
             }
-            else if(gamepad2.y){
-                armServo.setPosition(1.0);
+            if(gamepad2.y){
+                armServo.setPosition(0.75);
             }
 
             //if statements are for intake motor
@@ -202,19 +200,27 @@ public class Gamepad2 extends LinearOpMode {
 
 
             if(gamepad2.dpad_right) {
-                myGoToHeightPOS(3700, 1);
+                myGoToHeightPOS(3850, 1);
+                sleep(300);
+                armServo.setPosition(0.1);
                 //linear slide goes up for high junction
             }
             if(gamepad2.dpad_left) {
                 myGoToHeightPOS(1700, 1);
+                sleep(300);
+                armServo.setPosition(0.1);
                 //linear slide goes up for low junction
             }
             if(gamepad2.dpad_up) {
                 myGoToHeightPOS(2700, 1);
+                sleep(300);
+                armServo.setPosition(0.1);
                 //linear slide goes up for mid junction
             }
             if(gamepad2.dpad_down){
+                armServo.setPosition(0.75);
                 myGoToHeightPOS(0, 1);
+
                 //linear slide goes down no matter the height
             }
         }
@@ -235,7 +241,7 @@ public class Gamepad2 extends LinearOpMode {
         leftSlide.setPower(motorPower);
         rightSlide.setPower(motorPower);
 
-        if(leftSlide.getCurrentPosition()>=3800 || leftSlide.getCurrentPosition()<=-3800 || rightSlide.getCurrentPosition()>=3800 || rightSlide.getCurrentPosition()<=-3800) {
+        if(leftSlide.getCurrentPosition()>=4200 || leftSlide.getCurrentPosition()<=-3800 || rightSlide.getCurrentPosition()>=3800 || rightSlide.getCurrentPosition()<=-3800) {
             leftSlide.setPower(0.0);
             rightSlide.setPower(0.0);
             telemetry.addData("Maximum Reached", slidePOS);
