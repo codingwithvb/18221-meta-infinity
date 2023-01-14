@@ -131,10 +131,7 @@ public class Right23 extends LinearOpMode
         });
 
         telemetry.setMsTransmissionInterval(50);
-        /*
-         * The INIT-loop:
-         * This REPLACES waitForStart!
-         */
+
         TrajectorySequence trajLeft = robot.trajectorySequenceBuilder(startPose)
                 .lineTo(new Vector2d(-30,0))
                 .lineToSplineHeading(new Pose2d(-67,0, Math.toRadians(90)))
@@ -202,7 +199,10 @@ public class Right23 extends LinearOpMode
                 .strafeRight(35)
                 .build();
 
-
+        /*
+         * The INIT-loop:
+         * This REPLACES waitForStart!
+         */
         while (!isStarted() && !isStopRequested())
         {
 
