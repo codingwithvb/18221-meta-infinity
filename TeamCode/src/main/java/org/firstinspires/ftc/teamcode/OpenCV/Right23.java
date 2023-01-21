@@ -101,9 +101,9 @@ public class Right23 extends LinearOpMode
         leftSlide.setDirection(DcMotorSimple.Direction.REVERSE);
 
         armServo = hardwareMap.servo.get("ArmServo");
-        armServo.setPosition(075);
+        armServo.setPosition(0.75);
         clawServo = hardwareMap.servo.get("ClawServo");
-        clawServo.setPosition(1);
+        clawServo.setPosition(0.9);
 
         touchSensor = hardwareMap.touchSensor.get("Touch");
 
@@ -131,21 +131,24 @@ public class Right23 extends LinearOpMode
         });
 
         telemetry.setMsTransmissionInterval(50);
-
+        /*
+         * The INIT-loop:
+         * This REPLACES waitForStart!
+         */
         TrajectorySequence trajLeft = robot.trajectorySequenceBuilder(startPose)
                 .lineTo(new Vector2d(-30,0))
-                .lineToSplineHeading(new Pose2d(-67,0, Math.toRadians(90)))
+                .lineToSplineHeading(new Pose2d(-65.5,0, Math.toRadians(90)))
                 .addTemporalMarker(() -> myGoToHeightPOS(3650,1))
                 .addTemporalMarker(() -> armServo.setPosition(0.1))
                 .back(2)
                 .addTemporalMarker(() -> clawServo.setPosition(0.65))
                 .forward(5)
                 .addTemporalMarker(() -> myGoToHeightPOS(-3150, 1))
-                .strafeRight(13)
+                .strafeRight(15)
                 .turn(Math.toRadians(180))
                 .lineTo(new Vector2d(-56, 29))
                 .addTemporalMarker(() -> clawServo.setPosition(1))
-                .waitSeconds(0)
+                .waitSeconds(0.5)
                 .addTemporalMarker(() -> myGoToHeightPOS(2100,1))
                 .forward(9)
                 .turn(Math.toRadians(-90))
@@ -156,18 +159,18 @@ public class Right23 extends LinearOpMode
                 .build();
         TrajectorySequence trajMiddle = robot.trajectorySequenceBuilder(startPose)
                 .lineTo(new Vector2d(-30,0))
-                .lineToSplineHeading(new Pose2d(-67,0, Math.toRadians(90)))
+                .lineToSplineHeading(new Pose2d(-65.5,0, Math.toRadians(90)))
                 .addTemporalMarker(() -> myGoToHeightPOS(3650,1))
                 .addTemporalMarker(() -> armServo.setPosition(0.1))
                 .back(2)
                 .addTemporalMarker(() -> clawServo.setPosition(0.65))
                 .forward(5)
                 .addTemporalMarker(() -> myGoToHeightPOS(-3150, 1))
-                .strafeRight(13)
+                .strafeRight(15)
                 .turn(Math.toRadians(180))
                 .lineTo(new Vector2d(-56, 29))
                 .addTemporalMarker(() -> clawServo.setPosition(1))
-                .waitSeconds(0)
+                .waitSeconds(0.5)
                 .addTemporalMarker(() -> myGoToHeightPOS(2100,1))
                 .forward(7)
                 .turn(Math.toRadians(-90))
@@ -178,18 +181,18 @@ public class Right23 extends LinearOpMode
                 .build();
         TrajectorySequence trajRight = robot.trajectorySequenceBuilder(startPose)
                 .lineTo(new Vector2d(-30,0))
-                .lineToSplineHeading(new Pose2d(-67,0, Math.toRadians(90)))
+                .lineToSplineHeading(new Pose2d(-65.5,0, Math.toRadians(90)))
                 .addTemporalMarker(() -> myGoToHeightPOS(3650,1))
                 .addTemporalMarker(() -> armServo.setPosition(0.1))
                 .back(2)
                 .addTemporalMarker(() -> clawServo.setPosition(0.65))
                 .forward(5)
                 .addTemporalMarker(() -> myGoToHeightPOS(-3150, 1))
-                .strafeRight(13)
-                .turn(Math.toRadians(180))
+                .strafeRight(15)
+                .turn(Math.toRadians(-90))
                 .lineTo(new Vector2d(-54, 29))
                 .addTemporalMarker(() -> clawServo.setPosition(1))
-                .waitSeconds(0)
+                .waitSeconds(0.5)
                 .addTemporalMarker(() -> myGoToHeightPOS(2100,1))
                 .forward(7)
                 .turn(Math.toRadians(-90))
@@ -199,10 +202,7 @@ public class Right23 extends LinearOpMode
                 .strafeRight(35)
                 .build();
 
-        /*
-         * The INIT-loop:
-         * This REPLACES waitForStart!
-         */
+
         while (!isStarted() && !isStopRequested())
         {
 
@@ -331,6 +331,8 @@ public class Right23 extends LinearOpMode
         rightSlide.setPower(motorPower);
         while(leftSlide.isBusy() || rightSlide.isBusy()){
             //to find slide position and motor position
+            if(leftSlide.getCurrentPosition()>200)
+                armServo.setPosition(.1);
             telemetry.addData("leftSlidePOS", leftSlide.getCurrentPosition());
             telemetry.addData("rightSlidePOS", rightSlide.getCurrentPosition());
             telemetry.addData("motorPower", motorPower);
