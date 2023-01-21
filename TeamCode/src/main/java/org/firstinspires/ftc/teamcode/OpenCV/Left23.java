@@ -131,78 +131,76 @@ public class Left23 extends LinearOpMode
         });
 
         telemetry.setMsTransmissionInterval(50);
-
+        /*
+         * The INIT-loop:
+         * This REPLACES waitForStart!
+         */
         TrajectorySequence trajLeft = robot.trajectorySequenceBuilder(startPose)
                 .lineTo(new Vector2d(-30,0))
-                .lineToSplineHeading(new Pose2d(-68,0, Math.toRadians(-90)))
-                .addTemporalMarker(() -> myGoToHeightPOS(3650,1))
+                .lineToSplineHeading(new Pose2d(-66,0, Math.toRadians(-90)))
+                .addTemporalMarker(() -> myGoToHeightPOS(3750,1))
                 .addTemporalMarker(() -> armServo.setPosition(0.1))
-                .back(2)
+                .back(1.5)
                 .addTemporalMarker(() -> clawServo.setPosition(0.65))
                 .forward(5)
-                .addTemporalMarker(() -> myGoToHeightPOS(-3150, 1))
+                .addTemporalMarker(() -> myGoToHeightPOS(-3250, 1))
                 .strafeLeft(16)
                 .turn(Math.toRadians(180))
                 .lineTo(new Vector2d(-54, -31))
                 .addTemporalMarker(() -> clawServo.setPosition(1))
-                .waitSeconds(0)
-                .addTemporalMarker(() -> myGoToHeightPOS(2600,1))
+                .waitSeconds(0.5)
+                .addTemporalMarker(() -> myGoToHeightPOS(2100,1))
                 .forward(7)
                 .turn(Math.toRadians(90))
-                .lineTo(new Vector2d(-49, 10))
+                .lineTo(new Vector2d(-51, 10))
                 .addTemporalMarker(() -> clawServo.setPosition(0.65))
                 .forward(4)
                 .strafeLeft(38)
                 .build();
         TrajectorySequence trajMiddle = robot.trajectorySequenceBuilder(startPose)
                 .lineTo(new Vector2d(-30,0))
-                .lineToSplineHeading(new Pose2d(-68,0, Math.toRadians(-90)))
-                .addTemporalMarker(() -> myGoToHeightPOS(3650,1))
+                .lineToSplineHeading(new Pose2d(-66,0, Math.toRadians(-90)))
+                .addTemporalMarker(() -> myGoToHeightPOS(3750,1))
                 .addTemporalMarker(() -> armServo.setPosition(0.1))
-                .back(2)
+                .back(1.5)
                 .addTemporalMarker(() -> clawServo.setPosition(0.65))
                 .forward(5)
-                .addTemporalMarker(() -> myGoToHeightPOS(-3150, 1))
+                .addTemporalMarker(() -> myGoToHeightPOS(-3250, 1))
                 .strafeLeft(16)
                 .turn(Math.toRadians(180))
                 .lineTo(new Vector2d(-54, -31))
-                .addTemporalMarker(() -> clawServo.setPosition(1))
-                .waitSeconds(0)
-                .addTemporalMarker(() -> myGoToHeightPOS(2600,1))
+                .addTemporalMarker(() -> clawServo.setPosition(0.9))
+                .waitSeconds(0.5)
+                .addTemporalMarker(() -> myGoToHeightPOS(2100,1))
                 .forward(7)
                 .turn(Math.toRadians(90))
-                .lineTo(new Vector2d(-49, 10))
+                .lineTo(new Vector2d(-51, 10))
                 .addTemporalMarker(() -> clawServo.setPosition(0.65))
                 .forward(4)
                 .strafeLeft(15)
                 .build();
         TrajectorySequence trajRight = robot.trajectorySequenceBuilder(startPose)
                 .lineTo(new Vector2d(-30,0))
-                .lineToSplineHeading(new Pose2d(-68,0, Math.toRadians(-90)))
-                .addTemporalMarker(() -> myGoToHeightPOS(3650,1))
+                .lineToSplineHeading(new Pose2d(-66,0, Math.toRadians(-90)))
+                .addTemporalMarker(() -> myGoToHeightPOS(3750,1))
                 .addTemporalMarker(() -> armServo.setPosition(0.1))
-                .back(2)
+                .back(1.5)
                 .addTemporalMarker(() -> clawServo.setPosition(0.65))
                 .forward(5)
-                .addTemporalMarker(() -> myGoToHeightPOS(-3150, 1))
+                .addTemporalMarker(() -> myGoToHeightPOS(-3250, 1))
                 .strafeLeft(16)
                 .turn(Math.toRadians(180))
                 .lineTo(new Vector2d(-54, -31))
-                .addTemporalMarker(() -> clawServo.setPosition(1))
-                .waitSeconds(0)
-                .addTemporalMarker(() -> myGoToHeightPOS(2600,1))
+                .addTemporalMarker(() -> clawServo.setPosition(0.9))
+                .waitSeconds(0.5)
+                .addTemporalMarker(() -> myGoToHeightPOS(2100,1))
                 .forward(7)
                 .turn(Math.toRadians(90))
-                .lineTo(new Vector2d(-49, 10))
+                .lineTo(new Vector2d(-51, 10))
                 .addTemporalMarker(() -> clawServo.setPosition(0.65))
                 .forward(4)
                 .strafeRight(14)
                 .build();
-
-        /*
-         * The INIT-loop:
-         * This REPLACES waitForStart!
-         */
         while (!isStarted() && !isStopRequested())
         {
 
@@ -329,6 +327,8 @@ public class Left23 extends LinearOpMode
         rightSlide.setPower(motorPower);
         while(leftSlide.isBusy() || rightSlide.isBusy()){
             //to find slide position and motor position
+            if(leftSlide.getCurrentPosition()>200)
+                armServo.setPosition(.1);
             telemetry.addData("leftSlidePOS", leftSlide.getCurrentPosition());
             telemetry.addData("rightSlidePOS", rightSlide.getCurrentPosition());
             telemetry.addData("motorPower", motorPower);
