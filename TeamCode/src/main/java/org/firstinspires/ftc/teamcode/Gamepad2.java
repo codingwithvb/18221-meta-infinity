@@ -28,6 +28,9 @@
  */
 
 package org.firstinspires.ftc.teamcode;
+import android.app.Activity;
+import android.graphics.Color;
+import android.view.View;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -38,6 +41,12 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
+import com.qualcomm.robotcore.hardware.SwitchableLight;
+
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 
 /**
@@ -75,12 +84,18 @@ public class Gamepad2 extends LinearOpMode {
     Servo clawServo;
     Servo armServo;
 
+    NormalizedColorSensor colorSensor;
     TouchSensor touchSensor;
 
     double horizontal;
     double vertical;
     double pivot;
     double sensitivity;
+
+    double gc_armOut = 0.1;         // Arm position claw outside
+    double gc_armIn = 0.75;         // Arm position claw inside
+    double gc_clawOpen = 0.65;      // Claw Open
+    double gc_clawClosed = 1.0;     // Claw Closed
 
     @Override
     public void runOpMode() {
@@ -99,11 +114,16 @@ public class Gamepad2 extends LinearOpMode {
         rightSlide = hardwareMap.dcMotor.get("RightSlide");
 
         armServo = hardwareMap.servo.get("ArmServo");
-        armServo.setPosition(0.75);
+        armServo.setPosition(gc_armOut);           // Arm Out = 0.1
         clawServo = hardwareMap.servo.get("ClawServo");
-        clawServo.setPosition(0.65);
+        clawServo.setPosition(gc_clawClosed);     // Claw Closed = 1.0
 
         touchSensor = hardwareMap.touchSensor.get("Touch");
+        colorSensor = hardwareMap.get(NormalizedColorSensor.class, "sensor_color");
+
+        if (colorSensor instanceof SwitchableLight) {
+            ((SwitchableLight)colorSensor).enableLight(true);
+        }
 
         FrontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         BackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -116,14 +136,33 @@ public class Gamepad2 extends LinearOpMode {
 
         waitForStart();
         runtime.reset();
+
+        // slides go down half power till hits Touch Sensor or interrupted by driver Gamepad1 A
         while(!touchSensor.isPressed()){
             telemetry.addData("Digital Touch", "Is Not Pressed - moving down");
             telemetry.update();
-            leftSlide.setPower(-0.5);
-            rightSlide.setPower(-0.5);
+            if(gamepad2.left_bumper){
+                leftSlide.setPower(-0.5);
+                rightSlide.setPower(-0.5);
+            }
+            else if(gamepad2.right_bumper){
+                leftSlide.setPower(0.5);
+                rightSlide.setPower(0.5);
+            }
+            else {
+                leftSlide.setPower(0);
+                rightSlide.setPower(0);
+            }
+            if(gamepad2.x){
+                armServo.setPosition(gc_armOut);
+            }
+            if(gamepad2.y){
+                armServo.setPosition(gc_armIn);
+            }
             if(gamepad1.a)
-                break;
+                break;      // Stop the downward movement if something goes wrong
         }
+        // Stop the slide down and reset encoders to zero position
         leftSlide.setPower(0);
         rightSlide.setPower(0);
         leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -132,16 +171,24 @@ public class Gamepad2 extends LinearOpMode {
         while (opModeIsActive()) {
             // Stop slide motors if the touch sensor is pressed
             // if the digital channel returns true it's HIGH and the button is unpressed.
-            if (touchSensor.isPressed()) {
+            if (touchSensor.isPressed() || gamepad1.a) {
                 telemetry.addData("Digital Touch", "Is Pressed - reset encoder");
+                leftSlide.setPower(0);
+                rightSlide.setPower(0);
                 leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             } else {
                 telemetry.addData("Digital Touch", "Is Not Pressed");
             }
-            //telemetry.addData("claw", clawServo.getPosition());
-            //telemetry.update();
-
+            //check for cone within 6 cn of color sensor
+            //close claw and prime slides if ready
+            telemetry.addData("Distance",((DistanceSensor) colorSensor).getDistance(DistanceUnit.CM));
+            telemetry.update();
+            if(((DistanceSensor) colorSensor).getDistance(DistanceUnit.CM)<6){
+                clawServo.setPosition(gc_clawClosed);
+                sleep(200);
+                myAvoidClawHittingShield();
+            }
             //movement code for the robot
             horizontal = gamepad1.left_stick_x;
             pivot = gamepad1.right_stick_x;
@@ -159,32 +206,35 @@ public class Gamepad2 extends LinearOpMode {
 
             //if statements are for the servo position whether it be arm or claw.
             if(gamepad2.b){
-                clawServo.setPosition(1.0);
+                clawServo.setPosition(gc_clawClosed);
             }
             if(gamepad2.a){
-                clawServo.setPosition(0.65);
+                clawServo.setPosition(gc_clawOpen);
             }
             if(gamepad2.x){
-                armServo.setPosition(0.1);
+                armServo.setPosition(gc_armOut);
             }
             if(gamepad2.y){
-                armServo.setPosition(0.75);
+                armServo.setPosition(gc_armIn);
             }
 
             //if statements are for intake motor
-            if(gamepad1.right_trigger>0){
+            if(gamepad1.right_trigger>0){           // Intake full power GP1 Right Trigger
                 rightIntakeMotor.setPower(1.0);
                 leftIntakeMotor.setPower(-1.0);
-            }else{
+            }else if(gamepad1.left_bumper) {        // Reverse Intake - GP1 Left Bumper
+                rightIntakeMotor.setPower(-1.0);
+                leftIntakeMotor.setPower(1.0);
+            }else{                                 // Default - No intake
                 rightIntakeMotor.setPower(0.0);
                 leftIntakeMotor.setPower(0.0);
             }
-
-            if(gamepad2.right_bumper){
-                myGoToHeightPOS(leftSlide.getCurrentPosition()+300,1);
+            //micro adjustments
+            if(gamepad2.right_bumper){            // Move up 300 - GP2 - Right Bumper
+                myGoToHeightPOS(leftSlide.getCurrentPosition()+300,0.5);
             }
-            if(gamepad2.left_bumper){
-                myGoToHeightPOS(leftSlide.getCurrentPosition()-300,1);
+            if(gamepad2.left_bumper){            // Move down 300 - GP2 - Right Bumper
+                myGoToHeightPOS(leftSlide.getCurrentPosition()-300,0.5);
             }
 
             int v_leftSlidePosition = leftSlide.getCurrentPosition();
@@ -198,30 +248,60 @@ public class Gamepad2 extends LinearOpMode {
 
             //macros
 
-
+            // GP2 DPAD Right - linear slide goes up, Arm Out for high junction - 3850
             if(gamepad2.dpad_right) {
+                // If over height of shield roof 600
+                if(leftSlide.getCurrentPosition()>600) {
+                    armServo.setPosition(gc_armOut);
+                    clawServo.setPosition(gc_clawClosed);
+                }
+                // if claw is under the shield roof, move it up and then turn arm out
+                else {
+                    myAvoidClawHittingShield();
+                }
                 myGoToHeightPOS(3850, 1);
-                sleep(300);
-                armServo.setPosition(0.1);
-                //linear slide goes up for high junction
             }
-            if(gamepad2.dpad_left) {
-                myGoToHeightPOS(1700, 1);
-                sleep(300);
-                armServo.setPosition(0.1);
-                //linear slide goes up for low junction
-            }
-            if(gamepad2.dpad_up) {
-                myGoToHeightPOS(2700, 1);
-                sleep(300);
-                armServo.setPosition(0.1);
-                //linear slide goes up for mid junction
-            }
-            if(gamepad2.dpad_down){
-                armServo.setPosition(0.75);
-                myGoToHeightPOS(0, 1);
 
-                //linear slide goes down no matter the height
+            // GP2 DPAD Left - linear slide goes up, Arm Out for Low junction - 1700
+            if(gamepad2.dpad_left) {
+                // If over height of shield roof 600
+                if(leftSlide.getCurrentPosition()>600) {
+                    armServo.setPosition(gc_armOut);
+                    clawServo.setPosition(gc_clawClosed);
+                }
+                else {
+                    myAvoidClawHittingShield();
+                }
+                myGoToHeightPOS(1700, 1);
+            }
+
+            //  GP2 DPAD Up - linear slide goes up, Arm Out for Medium junction - 2700
+            if(gamepad2.dpad_up) {
+                // If over height of shield roof 600
+                if(leftSlide.getCurrentPosition()>600) {
+                    armServo.setPosition(gc_armOut);
+                    clawServo.setPosition(gc_clawClosed);
+                }
+                else {
+                    myAvoidClawHittingShield();
+                }
+                myGoToHeightPOS(2700, 1);
+            }
+
+            //  GP2 DPAD Down - Claw down, Arm In for picking intake cone - 0
+            if(gamepad2.dpad_down){
+                myGoToHeightPOS(300, 1);
+                while(leftSlide.isBusy()||rightSlide.isBusy()){
+                    clawServo.setPosition(gc_clawClosed);
+                    FrontRight.setPower(0.7*(-pivot + (vertical - horizontal)));
+                    BackRight.setPower(0.7*(-pivot + vertical + horizontal));
+                    FrontLeft.setPower(0.7*(pivot + vertical + horizontal));
+                    BackLeft.setPower(0.7*(pivot + (vertical - horizontal)));
+                }
+                armServo.setPosition(gc_armIn);
+                clawServo.setPosition(gc_clawClosed);
+                sleep(600);
+                myGoToHeightPOS(0, 1);
             }
         }
     }
@@ -241,11 +321,25 @@ public class Gamepad2 extends LinearOpMode {
         leftSlide.setPower(motorPower);
         rightSlide.setPower(motorPower);
 
-        if(leftSlide.getCurrentPosition()>=4200 || leftSlide.getCurrentPosition()<=-3800 || rightSlide.getCurrentPosition()>=3800 || rightSlide.getCurrentPosition()<=-3800) {
+        /*if(leftSlide.getCurrentPosition()>=4200 || leftSlide.getCurrentPosition()<=-3800 || rightSlide.getCurrentPosition()>=3800 || rightSlide.getCurrentPosition()<=-3800) {
             leftSlide.setPower(0.0);
             rightSlide.setPower(0.0);
             telemetry.addData("Maximum Reached", slidePOS);
             telemetry.update();
+        }*/
+    }
+
+    public void myAvoidClawHittingShield() {
+        // Go to height 400 and then turn the arm and claw out to avoid cone shield
+        myGoToHeightPOS(400, 1);
+        while (leftSlide.isBusy() || rightSlide.isBusy()){
+            FrontRight.setPower(0.7*(-pivot + (vertical - horizontal)));
+            BackRight.setPower(0.7*(-pivot + vertical + horizontal));
+            FrontLeft.setPower(0.7*(pivot + vertical + horizontal));
+            BackLeft.setPower(0.7*(pivot + (vertical - horizontal)));
+            clawServo.setPosition(gc_clawClosed);
         }
+        armServo.setPosition(gc_armOut);
+
     }
 }
