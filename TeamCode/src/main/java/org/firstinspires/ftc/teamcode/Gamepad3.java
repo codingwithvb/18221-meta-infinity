@@ -42,6 +42,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
+import java.util.Set;
+
 
 /**
  * This file contains an minimal example of a Linear "OpMode". An OpMode is a 'program' that runs in either
@@ -77,6 +79,7 @@ public class Gamepad3 extends LinearOpMode {
 
     Servo clawServo;
     Servo armServo;
+    Servo armServo2;
 
     NormalizedColorSensor colorSensor;
     TouchSensor touchSensor;
@@ -89,7 +92,7 @@ public class Gamepad3 extends LinearOpMode {
     double gc_armOut = 0;         // Arm position claw outside
     double gc_armIn = 0.6;         // Arm position claw inside
     double gc_clawOpen = 0.5;      // Claw Open
-    double gc_clawClosed = 0.65;     // Claw Closed
+    double gc_clawClosed = 0.7;     // Claw Closed
 
     @Override
     public void runOpMode() {
@@ -108,7 +111,8 @@ public class Gamepad3 extends LinearOpMode {
         rightSlide = hardwareMap.dcMotor.get("RightSlide");
 
         armServo = hardwareMap.servo.get("ArmServo");
-        armServo.setPosition(gc_armIn);           // Arm Out = 0.1
+        armServo2 = hardwareMap.servo.get("ArmServo2");
+
         clawServo = hardwareMap.servo.get("ClawServo");
         clawServo.setPosition(gc_clawClosed);     // Claw Closed = 1.0
 
@@ -125,6 +129,10 @@ public class Gamepad3 extends LinearOpMode {
 
         leftSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        armServo2.setDirection(Servo.Direction.REVERSE);
+
+        SetArmServoPOS(0.6);
 
         waitForStart();
         runtime.reset();
@@ -176,7 +184,7 @@ public class Gamepad3 extends LinearOpMode {
             //close claw and prime slides if ready
             telemetry.addData("Distance",((DistanceSensor) colorSensor).getDistance(DistanceUnit.CM));
             telemetry.update();
-            if(((DistanceSensor) colorSensor).getDistance(DistanceUnit.CM)<12){
+            if(((DistanceSensor) colorSensor).getDistance(DistanceUnit.CM)<3){
                 AutoMoveClaw();
             }
             //movement code for the robot
@@ -202,11 +210,10 @@ public class Gamepad3 extends LinearOpMode {
                 clawServo.setPosition(gc_clawOpen);
             }
             if(gamepad2.x){
-                armServo.setPosition(0.3);
-                //armServo.setPosition(gc_armOut);
+                SetArmServoPOS(0.0);
             }
             if(gamepad2.y){
-                armServo.setPosition(gc_armIn);
+                SetArmServoPOS(0.6);
             }
 
             //micro adjustments
@@ -230,30 +237,38 @@ public class Gamepad3 extends LinearOpMode {
 
             // GP2 DPAD Right - linear slide goes up, Arm Out for high junction - 3850
             if(gamepad2.dpad_right) {
+                myGoToHeightPOS(2900, 1);
+                SetArmServoPOS(0);
             }
 
             // GP2 DPAD Left - linear slide goes up, Arm Out for Low junction - 1700
             if(gamepad2.dpad_left) {
+                myGoToHeightPOS(500, 1);
+                SetArmServoPOS(0);
             }
 
             //  GP2 DPAD Up - linear slide goes up, Arm Out for Medium junction - 2700
             if(gamepad2.dpad_up) {
+                myGoToHeightPOS(1500, 1);
+                SetArmServoPOS(0);
             }
 
             //  GP2 DPAD Down - Claw down, Arm In for picking intake cone - 0
             if(gamepad2.dpad_down){
-                myGoToHeightPOS(300, 1);
+                SetArmServoPOS(0.2);
+                myGoToHeightPOS(0, 1);
                 while(leftSlide.isBusy()||rightSlide.isBusy()){
-                    clawServo.setPosition(gc_clawClosed);
+                    if (sensitivity > 0) {
+                        vertical = (float) (vertical * 0.5);
+                        horizontal = (float) (horizontal * 0.5);
+                        pivot = (float) (pivot * 0.5);
+                    }
                     FrontRight.setPower(0.7*(-pivot + (vertical - horizontal)));
                     BackRight.setPower(0.7*(-pivot + vertical + horizontal));
                     FrontLeft.setPower(0.7*(pivot + vertical + horizontal));
                     BackLeft.setPower(0.7*(pivot + (vertical - horizontal)));
                 }
-                armServo.setPosition(gc_armIn);
-                clawServo.setPosition(gc_clawClosed);
-                sleep(600);
-                myGoToHeightPOS(0, 1);
+                SetArmServoPOS(0.6);
             }
         }
     }
@@ -272,13 +287,17 @@ public class Gamepad3 extends LinearOpMode {
         rightSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftSlide.setPower(motorPower);
         rightSlide.setPower(motorPower);
-        
+
     }
 
     public void AutoMoveClaw(){
         clawServo.setPosition(gc_clawClosed);
-        sleep(500);
-        armServo.setPosition(0.3);
+        sleep(300);
+        SetArmServoPOS(0.2);
+    }
+    public void SetArmServoPOS(double servopos){
+        armServo.setPosition(servopos);
+        armServo2.setPosition(servopos);
     }
 
 }
