@@ -35,6 +35,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.SwitchableLight;
 import com.qualcomm.robotcore.hardware.TouchSensor;
@@ -64,8 +65,6 @@ public class Gamepad3 extends LinearOpMode {
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
-    // private DcMotor leftDrive = null;
-    // private DcMotor rightDrive = null;
 
     DcMotor FrontRight;
     DcMotor FrontLeft;
@@ -123,6 +122,9 @@ public class Gamepad3 extends LinearOpMode {
             ((SwitchableLight)colorSensor).enableLight(true);
         }
 
+
+        NormalizedRGBA colors = colorSensor.getNormalizedColors();
+
         FrontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         BackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         leftSlide.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -132,7 +134,7 @@ public class Gamepad3 extends LinearOpMode {
 
         armServo2.setDirection(Servo.Direction.REVERSE);
 
-        SetArmServoPOS(0.6);
+        SetArmServoPOS(1);
 
         waitForStart();
         runtime.reset();
@@ -183,8 +185,11 @@ public class Gamepad3 extends LinearOpMode {
             //check for cone within 12 cm of color sensor
             //close claw and prime slides if ready
             telemetry.addData("Distance",((DistanceSensor) colorSensor).getDistance(DistanceUnit.CM));
+            telemetry.addLine()
+                    .addData("Red", "%.3f", colors.red)
+                    .addData("Blue", "%.3f", colors.blue);
             telemetry.update();
-            if(((DistanceSensor) colorSensor).getDistance(DistanceUnit.CM)<3){
+            if(((DistanceSensor) colorSensor).getDistance(DistanceUnit.CM)<5 && armServo2.getPosition() > 0.9){
                 AutoMoveClaw();
             }
             //movement code for the robot
@@ -208,12 +213,35 @@ public class Gamepad3 extends LinearOpMode {
             }
             if(gamepad2.a){
                 clawServo.setPosition(gc_clawOpen);
+                sleep(500);
+                while(colors.red>0.03 && colors.blue>0.025){
+                    telemetry.update();
+                }
+                clawServo.setPosition(gc_clawClosed);
+                SetArmServoPOS(1.0);
+                sleep(1000);
+                myGoToHeightPOS(0, 1);
+                while(leftSlide.isBusy()||rightSlide.isBusy()){
+                    if (sensitivity > 0) {
+                        vertical = (float) (vertical * 0.5);
+                        horizontal = (float) (horizontal * 0.5);
+                        pivot = (float) (pivot * 0.5);
+                    }
+                    FrontRight.setPower(0.7*(-pivot + (vertical - horizontal)));
+                    BackRight.setPower(0.7*(-pivot + vertical + horizontal));
+                    FrontLeft.setPower(0.7*(pivot + vertical + horizontal));
+                    BackLeft.setPower(0.7*(pivot + (vertical - horizontal)));
+                }
+                SetArmServoPOS(1);
+                clawServo.setPosition(gc_clawOpen);
             }
             if(gamepad2.x){
-                SetArmServoPOS(0.0);
+                SetArmServoPOS(0);
             }
             if(gamepad2.y){
-                SetArmServoPOS(0.6);
+                clawServo.setPosition(gc_clawClosed);
+                sleep(250);
+                SetArmServoPOS(1);
             }
 
             //micro adjustments
@@ -235,27 +263,26 @@ public class Gamepad3 extends LinearOpMode {
 
             //macros
 
-            // GP2 DPAD Right - linear slide goes up, Arm Out for high junction - 3850
+            // GP2 DPAD Right - linear slide goes up, Arm Out for HIGH junction - 2500
             if(gamepad2.dpad_right) {
-                myGoToHeightPOS(2900, 1);
+                myGoToHeightPOS(2500, 1);
                 SetArmServoPOS(0);
             }
 
-            // GP2 DPAD Left - linear slide goes up, Arm Out for Low junction - 1700
+            // GP2 DPAD Left - linear slide goes up, Arm Out for LOW junction - 300
             if(gamepad2.dpad_left) {
-                myGoToHeightPOS(500, 1);
+                myGoToHeightPOS(300, 1);
                 SetArmServoPOS(0);
             }
 
-            //  GP2 DPAD Up - linear slide goes up, Arm Out for Medium junction - 2700
+            //  GP2 DPAD Up - linear slide goes up, Arm Out for MEDIUM junction - 1375
             if(gamepad2.dpad_up) {
-                myGoToHeightPOS(1500, 1);
+                myGoToHeightPOS(1375, 1);
                 SetArmServoPOS(0);
             }
 
             //  GP2 DPAD Down - Claw down, Arm In for picking intake cone - 0
             if(gamepad2.dpad_down){
-                SetArmServoPOS(0.2);
                 myGoToHeightPOS(0, 1);
                 while(leftSlide.isBusy()||rightSlide.isBusy()){
                     if (sensitivity > 0) {
@@ -268,7 +295,8 @@ public class Gamepad3 extends LinearOpMode {
                     FrontLeft.setPower(0.7*(pivot + vertical + horizontal));
                     BackLeft.setPower(0.7*(pivot + (vertical - horizontal)));
                 }
-                SetArmServoPOS(0.6);
+                SetArmServoPOS(1);
+                clawServo.setPosition(gc_clawOpen);
             }
         }
     }
@@ -291,13 +319,15 @@ public class Gamepad3 extends LinearOpMode {
     }
 
     public void AutoMoveClaw(){
-        clawServo.setPosition(gc_clawClosed);
-        sleep(300);
-        SetArmServoPOS(0.2);
+        if(((DistanceSensor) colorSensor).getDistance(DistanceUnit.CM)<5 && armServo2.getPosition() > 0.9) {
+            clawServo.setPosition(gc_clawClosed);
+            sleep(500);
+            SetArmServoPOS(0);
+        }
     }
-    public void SetArmServoPOS(double servopos){
-        armServo.setPosition(servopos);
-        armServo2.setPosition(servopos);
+    public void SetArmServoPOS(double servoPos){
+        armServo.setPosition(servoPos);
+        armServo2.setPosition(servoPos);
     }
 
 }
