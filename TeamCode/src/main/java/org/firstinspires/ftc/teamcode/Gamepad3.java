@@ -190,7 +190,15 @@ public class Gamepad3 extends LinearOpMode {
                     .addData("Blue", "%.3f", colors.blue);
             telemetry.update();
             if(((DistanceSensor) colorSensor).getDistance(DistanceUnit.CM)<5 && armServo2.getPosition() > 0.9){
-                AutoMoveClaw();
+                if(gamepad1.right_trigger>0){
+                    clawServo.setPosition(0.6);
+                    sleep(500);
+                    SetArmServoPOS(0);
+                }
+                else {
+                    AutoMoveClaw();
+
+                }
             }
             //movement code for the robot
             horizontal = gamepad1.left_stick_x;
@@ -221,16 +229,15 @@ public class Gamepad3 extends LinearOpMode {
                 SetArmServoPOS(1.0);
                 sleep(1000);
                 myGoToHeightPOS(0, 1);
-                while(leftSlide.isBusy()||rightSlide.isBusy()){
-                    if (sensitivity > 0) {
-                        vertical = (float) (vertical * 0.5);
-                        horizontal = (float) (horizontal * 0.5);
-                        pivot = (float) (pivot * 0.5);
-                    }
-                    FrontRight.setPower(0.7*(-pivot + (vertical - horizontal)));
-                    BackRight.setPower(0.7*(-pivot + vertical + horizontal));
-                    FrontLeft.setPower(0.7*(pivot + vertical + horizontal));
-                    BackLeft.setPower(0.7*(pivot + (vertical - horizontal)));
+                while(leftSlide.getCurrentPosition()>400&&rightSlide.getCurrentPosition()>400){
+                    horizontal = gamepad1.left_stick_x;
+                    pivot = gamepad1.right_stick_x;
+                    vertical = -gamepad1.left_stick_y;
+                    sensitivity = gamepad1.left_trigger;
+                    FrontRight.setPower(0.4*(-pivot + (vertical - horizontal)));
+                    BackRight.setPower(0.4*(-pivot + vertical + horizontal));
+                    FrontLeft.setPower(0.4*(pivot + vertical + horizontal));
+                    BackLeft.setPower(0.4*(pivot + (vertical - horizontal)));
                 }
                 SetArmServoPOS(1);
                 clawServo.setPosition(gc_clawOpen);
@@ -284,7 +291,7 @@ public class Gamepad3 extends LinearOpMode {
             //  GP2 DPAD Down - Claw down, Arm In for picking intake cone - 0
             if(gamepad2.dpad_down){
                 myGoToHeightPOS(0, 1);
-                while(leftSlide.isBusy()||rightSlide.isBusy()){
+                while(leftSlide.getCurrentPosition()>400&&rightSlide.getCurrentPosition()>400){
                     if (sensitivity > 0) {
                         vertical = (float) (vertical * 0.5);
                         horizontal = (float) (horizontal * 0.5);
