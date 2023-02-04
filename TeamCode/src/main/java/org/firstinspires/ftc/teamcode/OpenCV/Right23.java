@@ -27,7 +27,10 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.SwitchableLight;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -40,7 +43,7 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
 
-@Autonomous (name="Right23", group="Linear Opmode", preselectTeleOp = "Gamepad2.0")
+@Autonomous (name="Right23", group="Linear Opmode", preselectTeleOp = "Gamepad3.0")
 public class Right23 extends LinearOpMode
 {
     DcMotor FrontRight;
@@ -53,8 +56,12 @@ public class Right23 extends LinearOpMode
 
     Servo clawServo;
     Servo armServo;
+    Servo armServo2;
 
-    TouchSensor touchSensor;
+    NormalizedColorSensor colorSensor;
+
+    double gc_clawOpen = 0.5;      // Claw Open
+    double gc_clawClosed = 0.65;     // Claw Closed
 
 
     OpenCvCamera camera;
@@ -99,16 +106,27 @@ public class Right23 extends LinearOpMode
         rightSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         leftSlide.setDirection(DcMotorSimple.Direction.REVERSE);
+        FrontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        BackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+
 
         armServo = hardwareMap.servo.get("ArmServo");
-        armServo.setPosition(0.75);
+        armServo2 = hardwareMap.servo.get("ArmServo2");
+        armServo2.setDirection(Servo.Direction.REVERSE);
+        setArmServoPOS(1);
         clawServo = hardwareMap.servo.get("ClawServo");
-        clawServo.setPosition(0.9);
+        clawServo.setPosition(0.7);
 
-        touchSensor = hardwareMap.touchSensor.get("Touch");
+        colorSensor = hardwareMap.get(NormalizedColorSensor.class, "sensor_color");
+
+        if (colorSensor instanceof SwitchableLight) {
+            ((SwitchableLight)colorSensor).enableLight(true);
+        }
+
 
         Pose2d startPose = new Pose2d(0,0,0);
         robot.setPoseEstimate(startPose);
+        NormalizedRGBA colors = colorSensor.getNormalizedColors();
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
@@ -131,78 +149,44 @@ public class Right23 extends LinearOpMode
         });
 
         telemetry.setMsTransmissionInterval(50);
+
+        TrajectorySequence traj = robot.trajectorySequenceBuilder(startPose)
+                .lineToSplineHeading(new Pose2d(-60, 0, Math.toRadians(0)))
+                .lineToSplineHeading(new Pose2d(-44, 0, Math.toRadians(0)))
+                .lineToSplineHeading(new Pose2d(-58, -2, Math.toRadians(45)))
+                .addTemporalMarker(() -> myGoToHeightPOS(2500, 0.75))
+                .addTemporalMarker(() -> setArmServoPOS(0))
+                .waitSeconds(1.25)
+                .addTemporalMarker(() -> coneDeposit(625))
+                .lineToSplineHeading(new Pose2d(-50, 27.5, Math.toRadians(90)))
+                .addTemporalMarker(() -> {
+                    clawServo.setPosition(gc_clawClosed);
+                    sleep(500);
+                    myGoToHeightPOS(1500, 0.75);
+                })
+                .lineToSplineHeading(new Pose2d(-55, -5, Math.toRadians(45)))
+                .addTemporalMarker(() -> myGoToHeightPOS(2500, 0.75))
+                .addTemporalMarker(() -> setArmServoPOS(0))
+                .waitSeconds(1.25)
+                .addTemporalMarker(() -> coneDeposit(0))
+                .build();
+
+        //Parking Trajectory depending on AprilTag:
+        //traj.end() = new Pose2d(-54,-3,Math.toRadians(45))
+        TrajectorySequence Left = robot.trajectorySequenceBuilder(traj.end())
+                .lineToSplineHeading(new Pose2d(-47, -26, Math.toRadians(0)))
+                .forward(24)
+                .build();
+        TrajectorySequence Middle = robot.trajectorySequenceBuilder(traj.end())
+                .lineToSplineHeading(new Pose2d(-28, 2, Math.toRadians(0)))
+                .build();
+        TrajectorySequence Right = robot.trajectorySequenceBuilder(traj.end())
+                .lineToSplineHeading(new Pose2d(-47, 24, Math.toRadians(90)))
+                .build();
         /*
          * The INIT-loop:
          * This REPLACES waitForStart!
          */
-        TrajectorySequence trajLeft = robot.trajectorySequenceBuilder(startPose)
-                .lineTo(new Vector2d(-30,0))
-                .lineToSplineHeading(new Pose2d(-65.5,0, Math.toRadians(90)))
-                .addTemporalMarker(() -> myGoToHeightPOS(3650,1))
-                .addTemporalMarker(() -> armServo.setPosition(0.1))
-                .back(2)
-                .addTemporalMarker(() -> clawServo.setPosition(0.65))
-                .forward(5)
-                .addTemporalMarker(() -> myGoToHeightPOS(-3150, 1))
-                .strafeRight(15)
-                .turn(Math.toRadians(180))
-                .lineTo(new Vector2d(-56, 29))
-                .addTemporalMarker(() -> clawServo.setPosition(1))
-                .waitSeconds(0.5)
-                .addTemporalMarker(() -> myGoToHeightPOS(2100,1))
-                .forward(9)
-                .turn(Math.toRadians(-90))
-                .lineTo(new Vector2d(-52, -12))
-                .addTemporalMarker(() -> clawServo.setPosition(0.65))
-                .forward(4)
-                .strafeLeft(16)
-                .build();
-        TrajectorySequence trajMiddle = robot.trajectorySequenceBuilder(startPose)
-                .lineTo(new Vector2d(-30,0))
-                .lineToSplineHeading(new Pose2d(-65.5,0, Math.toRadians(90)))
-                .addTemporalMarker(() -> myGoToHeightPOS(3650,1))
-                .addTemporalMarker(() -> armServo.setPosition(0.1))
-                .back(2)
-                .addTemporalMarker(() -> clawServo.setPosition(0.65))
-                .forward(5)
-                .addTemporalMarker(() -> myGoToHeightPOS(-3150, 1))
-                .strafeRight(15)
-                .turn(Math.toRadians(180))
-                .lineTo(new Vector2d(-56, 29))
-                .addTemporalMarker(() -> clawServo.setPosition(1))
-                .waitSeconds(0.5)
-                .addTemporalMarker(() -> myGoToHeightPOS(2100,1))
-                .forward(7)
-                .turn(Math.toRadians(-90))
-                .lineTo(new Vector2d(-52, -12))
-                .addTemporalMarker(() -> clawServo.setPosition(0.6))
-                .forward(4)
-                .strafeRight(12)
-                .build();
-        TrajectorySequence trajRight = robot.trajectorySequenceBuilder(startPose)
-                .lineTo(new Vector2d(-30,0))
-                .lineToSplineHeading(new Pose2d(-65.5,0, Math.toRadians(90)))
-                .addTemporalMarker(() -> myGoToHeightPOS(3650,1))
-                .addTemporalMarker(() -> armServo.setPosition(0.1))
-                .back(2)
-                .addTemporalMarker(() -> clawServo.setPosition(0.65))
-                .forward(5)
-                .addTemporalMarker(() -> myGoToHeightPOS(-3150, 1))
-                .strafeRight(15)
-                .turn(Math.toRadians(-90))
-                .lineTo(new Vector2d(-54, 29))
-                .addTemporalMarker(() -> clawServo.setPosition(1))
-                .waitSeconds(0.5)
-                .addTemporalMarker(() -> myGoToHeightPOS(2100,1))
-                .forward(7)
-                .turn(Math.toRadians(-90))
-                .lineTo(new Vector2d(-52, -12))
-                .addTemporalMarker(() -> clawServo.setPosition(0.65))
-                .forward(4)
-                .strafeRight(35)
-                .build();
-
-
         while (!isStarted() && !isStopRequested())
         {
 
@@ -285,19 +269,20 @@ public class Right23 extends LinearOpMode
             //left code
             telemetry.addLine("Left");
             telemetry.update();
-            robot.followTrajectorySequence(trajLeft);
+            robot.followTrajectorySequence(traj);
+            robot.followTrajectorySequence(Left);
         }else if(tagOfInterest == null || tagOfInterest.id == middle){
             //middle code
             telemetry.addLine("Middle");
             telemetry.update();
-            robot.followTrajectorySequence(trajMiddle);
+            robot.followTrajectorySequence(traj);
+            robot.followTrajectorySequence(Middle);
         }else if(tagOfInterest.id == right){
             //right code
             telemetry.addLine("Right");
             telemetry.update();
-
-
-            robot.followTrajectorySequence(trajRight);
+            robot.followTrajectorySequence(traj);
+            robot.followTrajectorySequence(Right);
         }
 
         /* You wouldn't have this in your autonomous, this is just to prevent the sample from ending */
@@ -316,33 +301,45 @@ public class Right23 extends LinearOpMode
     }
     public void myGoToHeightPOS(int slidePOS, double motorPower) {
         //to find slide position and motor position
-        telemetry.addData("leftSlidePOS", leftSlide.getCurrentPosition());
-        telemetry.addData("rightSlidePOS", rightSlide.getCurrentPosition());
+        telemetry.addData("leftSlide", leftSlide.getCurrentPosition());
+        telemetry.addData("rightSlide", rightSlide.getCurrentPosition());
         telemetry.addData("motorPower", motorPower);
         telemetry.update();
         //base encoder code
-        leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        leftSlide.setTargetPosition((slidePOS));
-        rightSlide.setTargetPosition((slidePOS));
+        //leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        //rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftSlide.setTargetPosition(slidePOS);
+        rightSlide.setTargetPosition(slidePOS);
         leftSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         rightSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftSlide.setPower(motorPower);
         rightSlide.setPower(motorPower);
         while(leftSlide.isBusy() || rightSlide.isBusy()){
             //to find slide position and motor position
-            if(leftSlide.getCurrentPosition()>200)
-                armServo.setPosition(.1);
             telemetry.addData("leftSlidePOS", leftSlide.getCurrentPosition());
             telemetry.addData("rightSlidePOS", rightSlide.getCurrentPosition());
             telemetry.addData("motorPower", motorPower);
             telemetry.update();
         }
-        if(leftSlide.getCurrentPosition()>=3800 || leftSlide.getCurrentPosition()<=-3800 || rightSlide.getCurrentPosition()>=3800 || rightSlide.getCurrentPosition()<=-3800) {
-            leftSlide.setPower(0.0);
-            rightSlide.setPower(0.0);
-            telemetry.addData("Maximum Reached", slidePOS);
+    }
+    public void setArmServoPOS(double servoPos) {
+        armServo.setPosition(servoPos);
+        armServo2.setPosition(servoPos);
+    }
+    public void coneDeposit(int slidePOS){
+        NormalizedRGBA colors = colorSensor.getNormalizedColors();
+
+        clawServo.setPosition(gc_clawOpen);
+        sleep(500);
+        while(colors.red>0.03 && colors.blue>0.025){
             telemetry.update();
         }
+        clawServo.setPosition(gc_clawClosed);
+        setArmServoPOS(1.0);
+        sleep(1000);
+        myGoToHeightPOS(slidePOS, 1);
+        setArmServoPOS(1);
+        sleep(500);
+        clawServo.setPosition(gc_clawOpen);
     }
 }
