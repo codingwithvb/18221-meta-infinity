@@ -1,56 +1,78 @@
-/*
- * Copyright (c) 2021 OpenFTC Team
+/* Copyright (c) 2017 FIRST. All rights reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted (subject to the limitations in the disclaimer below) provided that
+ * the following conditions are met:
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * Redistributions of source code must retain the above copyright notice, this list
+ * of conditions and the following disclaimer.
+ *
+ * Redistributions in binary form must reproduce the above copyright notice, this
+ * list of conditions and the following disclaimer in the documentation and/or
+ * other materials provided with the distribution.
+ *
+ * Neither the name of FIRST nor the names of its contributors may be used to endorse or
+ * promote products derived from this software without specific prior written permission.
+ *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS
+ * LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.teamcode.OpenCV;
+package org.firstinspires.ftc.teamcode;
 
-import com.acmerobotics.roadrunner.geometry.Pose2d;
-import com.acmerobotics.roadrunner.geometry.Vector2d;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.SwitchableLight;
 import com.qualcomm.robotcore.hardware.TouchSensor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
-import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
-import org.openftc.apriltag.AprilTagDetection;
-import org.openftc.easyopencv.OpenCvCamera;
-import org.openftc.easyopencv.OpenCvCameraFactory;
-import org.openftc.easyopencv.OpenCvCameraRotation;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
-import java.util.ArrayList;
+import java.util.Set;
 
-@Autonomous (name="Left23", group="Linear Opmode", preselectTeleOp = "Gamepad3.0")
-public class Left23 extends LinearOpMode
-{
+
+/**
+ * This file contains an minimal example of a Linear "OpMode". An OpMode is a 'program' that runs in either
+ * the autonomous or the teleop period of an FTC match. The names of OpModes appear on the menu
+ * of the FTC Driver Station. When a selection is made from the menu, the corresponding OpMode
+ * class is instantiated on the Robot Controller and executed.
+ *
+ * This particular OpMode just executes a basic Tank Drive Teleop for a two wheeled robot
+ * It includes all the skeletal structure that all linear OpModes contain.
+ *
+ * Use Android Studio to Copy this Class, and Paste it into your team's code folder with a new name.
+ * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
+ */
+//*****Vedanta we called this class JustReadTheInstructions while testing ;)*****
+@TeleOp(name="Gamepad3.0", group="Linear Opmode")
+//@Disabled
+public class Gamepad3 extends LinearOpMode {
+
+    // Declare OpMode members.
+    private ElapsedTime runtime = new ElapsedTime();
+
     DcMotor FrontRight;
     DcMotor FrontLeft;
     DcMotor BackRight;
     DcMotor BackLeft;
 
+    DcMotor leftIntakeMotor;
+    DcMotor rightIntakeMotor;
     DcMotor rightSlide;
     DcMotor leftSlide;
 
@@ -59,64 +81,41 @@ public class Left23 extends LinearOpMode
     Servo armServo2;
 
     NormalizedColorSensor colorSensor;
+    TouchSensor touchSensor;
 
+    double horizontal;
+    double vertical;
+    double pivot;
+    double sensitivity;
+
+    double gc_armOut = 0;         // Arm position claw outside
+    double gc_armIn = 0.6;         // Arm position claw inside
     double gc_clawOpen = 0.5;      // Claw Open
     double gc_clawClosed = 0.65;     // Claw Closed
 
-
-    OpenCvCamera camera;
-    AprilTagDetectionPipeline aprilTagDetectionPipeline;
-
-    static final double FEET_PER_METER = 3.28084;
-
-    // Lens intrinsics
-    // UNITS ARE PIXELS
-    // NOTE: this calibration is for the C920 webcam at 800x448.
-    // You will need to do your own calibration for other configurations!
-    double fx = 578.272;
-    double fy = 578.272;
-    double cx = 402.145;
-    double cy = 221.506;
-
-    // UNITS ARE METERS
-    double tagsize = 0.166;
-
-    //Tag IDs of Sleeve
-    int left = 17;
-    int middle = 18;
-    int right = 19;
-
-    AprilTagDetection tagOfInterest = null;
-
     @Override
-    public void runOpMode()
-    {
-        SampleMecanumDrive robot = new SampleMecanumDrive(hardwareMap);
+    public void runOpMode() {
+        telemetry.addData("Status", "Initialized");
+        telemetry.update();
 
         FrontLeft  = hardwareMap.dcMotor.get("LeftFront");
         FrontRight = hardwareMap.dcMotor.get("RightFront");
         BackRight = hardwareMap.dcMotor.get("RightBack");
         BackLeft = hardwareMap.dcMotor.get("LeftBack");
 
+        leftIntakeMotor = hardwareMap.dcMotor.get("LeftIntake");
+        rightIntakeMotor = hardwareMap.dcMotor.get("RightIntake");
+
         leftSlide = hardwareMap.dcMotor.get("LeftSlide");
         rightSlide = hardwareMap.dcMotor.get("RightSlide");
-        leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        leftSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        leftSlide.setDirection(DcMotorSimple.Direction.REVERSE);
-        FrontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-        BackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-
 
         armServo = hardwareMap.servo.get("ArmServo");
         armServo2 = hardwareMap.servo.get("ArmServo2");
-        armServo2.setDirection(Servo.Direction.REVERSE);
-        setArmServoPOS(1);
-        clawServo = hardwareMap.servo.get("ClawServo");
-        clawServo.setPosition(0.7);
 
+        clawServo = hardwareMap.servo.get("ClawServo");
+        clawServo.setPosition(gc_clawOpen);     // Claw Opened
+
+        touchSensor = hardwareMap.touchSensor.get("Touch");
         colorSensor = hardwareMap.get(NormalizedColorSensor.class, "sensor_color");
 
         if (colorSensor instanceof SwitchableLight) {
@@ -124,180 +123,189 @@ public class Left23 extends LinearOpMode
         }
 
 
-        Pose2d startPose = new Pose2d(0,0,0);
-        robot.setPoseEstimate(startPose);
         NormalizedRGBA colors = colorSensor.getNormalizedColors();
 
-        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
-        aprilTagDetectionPipeline = new AprilTagDetectionPipeline(tagsize, fx, fy, cx, cy);
+        FrontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        BackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftSlide.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        camera.setPipeline(aprilTagDetectionPipeline);
-        camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
-        {
-            @Override
-            public void onOpened()
-            {
-                camera.startStreaming(800,448, OpenCvCameraRotation.UPRIGHT);
+        leftSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        armServo2.setDirection(Servo.Direction.REVERSE);
+
+        SetArmServoPOS(1);
+
+        waitForStart();
+        runtime.reset();
+
+        // slides go down half power till hits Touch Sensor or interrupted by driver Gamepad1 A
+        /*while(!touchSensor.isPressed()){
+            telemetry.addData("Digital Touch", "Is Not Pressed - moving down");
+            telemetry.update();
+            if(gamepad2.left_bumper){
+                leftSlide.setPower(-0.5);
+                rightSlide.setPower(-0.5);
             }
-
-            @Override
-            public void onError(int errorCode)
-            {
-
+            else if(gamepad2.right_bumper){
+                leftSlide.setPower(0.5);
+                rightSlide.setPower(0.5);
             }
-        });
-
-        telemetry.setMsTransmissionInterval(50);
-
-        TrajectorySequence traj = robot.trajectorySequenceBuilder(startPose)
-                .lineToSplineHeading(new Pose2d(-60, 0, Math.toRadians(0)))
-                .lineToSplineHeading(new Pose2d(-44, 0, Math.toRadians(0)))
-                .lineToSplineHeading(new Pose2d(-56.5, 4, Math.toRadians(-45)))
-                .addTemporalMarker(() -> myGoToHeightPOS(2500, 0.75))
-                .addTemporalMarker(() -> setArmServoPOS(0))
-                .waitSeconds(1.25)
-                .addTemporalMarker(() -> coneDeposit(615))
-                .lineToSplineHeading(new Pose2d(-49, -26.5, Math.toRadians(-90)))
-                .addTemporalMarker(() -> {
-                    clawServo.setPosition(gc_clawClosed);
+            else {
+                leftSlide.setPower(0);
+                rightSlide.setPower(0);
+            }
+            if(gamepad2.x){
+                armServo.setPosition(gc_armOut);
+            }
+            if(gamepad2.y){
+                armServo.setPosition(gc_armIn);
+            }
+            if(gamepad1.a)
+                break;      // Stop the downward movement if something goes wrong
+        }*/
+        // Stop the slide down and reset encoders to zero position
+        leftSlide.setPower(0);
+        rightSlide.setPower(0);
+        leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        // run until the end of the match (driver presses STOP)
+        while (opModeIsActive()) {
+            // Stop slide motors if the touch sensor is pressed
+            // if the digital channel returns true it's HIGH and the button is unpressed.
+            if (touchSensor.isPressed() || gamepad1.a) {
+                telemetry.addData("Digital Touch", "Is Pressed - reset encoder");
+                leftSlide.setPower(0);
+                rightSlide.setPower(0);
+                leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            } else {
+                telemetry.addData("Digital Touch", "Is Not Pressed");
+            }
+            //check for cone within 12 cm of color sensor
+            //close claw and prime slides if ready
+            telemetry.addData("Distance",((DistanceSensor) colorSensor).getDistance(DistanceUnit.CM));
+            telemetry.addLine()
+                    .addData("Red", "%.3f", colors.red)
+                    .addData("Blue", "%.3f", colors.blue);
+            telemetry.update();
+            if(((DistanceSensor) colorSensor).getDistance(DistanceUnit.CM)<5 && armServo2.getPosition() > 0.9){
+                if(gamepad1.right_trigger>0){
+                    clawServo.setPosition(0.6);
                     sleep(500);
-                    myGoToHeightPOS(1500, 0.75);
-                })
-                .lineToSplineHeading(new Pose2d(-53, 6, Math.toRadians(-45)))
-                .addTemporalMarker(() -> myGoToHeightPOS(2500, 0.75))
-                .addTemporalMarker(() -> setArmServoPOS(0))
-                .waitSeconds(1.25)
-                .addTemporalMarker(() -> coneDeposit(0))
-                .build();
-
-        //Parking Trajectory depending on AprilTag:
-        //traj.end() = new Pose2d(-54,-3,Math.toRadians(45))
-        TrajectorySequence Right= robot.trajectorySequenceBuilder(traj.end())
-                .lineToSplineHeading(new Pose2d(-47, 26, Math.toRadians(0)))
-                .forward(24)
-                .build();
-        TrajectorySequence Middle = robot.trajectorySequenceBuilder(traj.end())
-                .lineToSplineHeading(new Pose2d(-30, -2, Math.toRadians(0)))
-                .build();
-        TrajectorySequence Left = robot.trajectorySequenceBuilder(traj.end())
-                .lineToSplineHeading(new Pose2d(-45, -24, Math.toRadians(-90)))
-                .build();
-        /*
-         * The INIT-loop:
-         * This REPLACES waitForStart!
-         */
-        while (!isStarted() && !isStopRequested())
-        {
-
-            ArrayList<AprilTagDetection> currentDetections = aprilTagDetectionPipeline.getLatestDetections();
-
-            if(currentDetections.size() != 0)
-            {
-                boolean tagFound = false;
-
-                for(AprilTagDetection tag : currentDetections)
-                {
-                    if(tag.id == left || tag.id == middle || tag.id == right)
-                    {
-                        tagOfInterest = tag;
-                        tagFound = true;
-                        break;
-                    }
+                    SetArmServoPOS(0);
                 }
+                else {
+                    AutoMoveClaw();
 
-                if(tagFound)
-                {
-                    telemetry.addLine("Tag of interest is in sight!\n\nLocation data:");
-                    tagToTelemetry(tagOfInterest);
                 }
-                else
-                {
-                    telemetry.addLine("Don't see tag of interest :(");
-
-                    if(tagOfInterest == null)
-                    {
-                        telemetry.addLine("(The tag has never been seen)");
-                    }
-                    else
-                    {
-                        telemetry.addLine("\nBut we HAVE seen the tag before; last seen at:");
-                        tagToTelemetry(tagOfInterest);
-                    }
-                }
-
             }
-            else
-            {
-                telemetry.addLine("Don't see tag of interest :(");
+            //movement code for the robot
+            horizontal = gamepad1.left_stick_x;
+            pivot = gamepad1.right_stick_x;
+            vertical = -gamepad1.left_stick_y;
+            sensitivity = gamepad1.left_trigger;
+            if (sensitivity > 0) {
+                vertical = (float) (vertical * 0.5);
+                horizontal = (float) (horizontal * 0.5);
+                pivot = (float) (pivot * 0.5);
+            }
+            FrontRight.setPower(0.7*(-pivot + (vertical - horizontal)));
+            BackRight.setPower(0.7*(-pivot + vertical + horizontal));
+            FrontLeft.setPower(0.7*(pivot + vertical + horizontal));
+            BackLeft.setPower(0.7*(pivot + (vertical - horizontal)));
 
-                if(tagOfInterest == null)
-                {
-                    telemetry.addLine("(The tag has never been seen)");
+            //if statements are for the servo position whether it be arm or claw.
+            if(gamepad2.b){
+                clawServo.setPosition(gc_clawClosed);
+            }
+            if(gamepad2.a){
+                clawServo.setPosition(gc_clawOpen);
+                sleep(500);
+                while(colors.red>0.03 && colors.blue>0.025){
+                    telemetry.update();
                 }
-                else
-                {
-                    telemetry.addLine("\nBut we HAVE seen the tag before; last seen at:");
-                    tagToTelemetry(tagOfInterest);
+                clawServo.setPosition(gc_clawClosed);
+                SetArmServoPOS(1.0);
+                sleep(1000);
+                myGoToHeightPOS(0, 0.6);
+                while(leftSlide.getCurrentPosition()>400&&rightSlide.getCurrentPosition()>400){
+                    horizontal = gamepad1.left_stick_x;
+                    pivot = gamepad1.right_stick_x;
+                    vertical = -gamepad1.left_stick_y;
+                    sensitivity = gamepad1.left_trigger;
+                    FrontRight.setPower(0.4*(-pivot + (vertical - horizontal)));
+                    BackRight.setPower(0.4*(-pivot + vertical + horizontal));
+                    FrontLeft.setPower(0.4*(pivot + vertical + horizontal));
+                    BackLeft.setPower(0.4*(pivot + (vertical - horizontal)));
                 }
-
+                SetArmServoPOS(1);
+                clawServo.setPosition(gc_clawOpen);
+            }
+            if(gamepad2.x){
+                SetArmServoPOS(0);
+            }
+            if(gamepad2.y){
+                clawServo.setPosition(gc_clawClosed);
+                sleep(250);
+                SetArmServoPOS(1);
             }
 
+            //micro adjustments
+            if(gamepad2.right_bumper){            // Move up 300 - GP2 - Right Bumper
+                myGoToHeightPOS(leftSlide.getCurrentPosition()+300,0.5);
+            }
+            if(gamepad2.left_bumper){            // Move down 300 - GP2 - Right Bumper
+                myGoToHeightPOS(leftSlide.getCurrentPosition()-300,0.5);
+            }
+
+            int v_leftSlidePosition = leftSlide.getCurrentPosition();
+            telemetry.addData("Left Position", v_leftSlidePosition);
+            int v_rightSlidePosition = rightSlide.getCurrentPosition();
+            telemetry.addData("Right Position", v_rightSlidePosition);
             telemetry.update();
-            sleep(20);
+
+            //to go up in left slide, lower the value; to go down in left slide, increase the value.
+            //to go up in right slide, increase the value; to go down in right slide, decrease the value.
+
+            //macros
+
+            // GP2 DPAD Right - linear slide goes up, Arm Out for HIGH junction - 2500
+            if(gamepad2.dpad_right) {
+                myGoToHeightPOS(2500, 0.6);
+                SetArmServoPOS(0);
+            }
+
+            // GP2 DPAD Left - linear slide goes up, Arm Out for LOW junction - 300
+            if(gamepad2.dpad_left) {
+                myGoToHeightPOS(300, 0.6);
+                SetArmServoPOS(0);
+            }
+
+            //  GP2 DPAD Up - linear slide goes up, Arm Out for MEDIUM junction - 1375
+            if(gamepad2.dpad_up) {
+                myGoToHeightPOS(1375, 0.6);
+                SetArmServoPOS(0);
+            }
+
+            //  GP2 DPAD Down - Claw down, Arm In for picking intake cone - 0
+            if(gamepad2.dpad_down){
+                myGoToHeightPOS(0, 0.6);
+                while(leftSlide.getCurrentPosition()>400&&rightSlide.getCurrentPosition()>400){
+                    if (sensitivity > 0) {
+                        vertical = (float) (vertical * 0.5);
+                        horizontal = (float) (horizontal * 0.5);
+                        pivot = (float) (pivot * 0.5);
+                    }
+                    FrontRight.setPower(0.7*(-pivot + (vertical - horizontal)));
+                    BackRight.setPower(0.7*(-pivot + vertical + horizontal));
+                    FrontLeft.setPower(0.7*(pivot + vertical + horizontal));
+                    BackLeft.setPower(0.7*(pivot + (vertical - horizontal)));
+                }
+                SetArmServoPOS(1);
+                clawServo.setPosition(gc_clawOpen);
+            }
         }
-
-        /*
-         * The START command just came in: now work off the latest snapshot acquired
-         * during the init loop.
-         */
-
-        /* Update the telemetry */
-        if(tagOfInterest != null)
-        {
-            telemetry.addLine("Tag snapshot:\n");
-            tagToTelemetry(tagOfInterest);
-            telemetry.update();
-        }
-        else
-        {
-            telemetry.addLine("No tag snapshot available, it was never sighted during the init loop :(");
-            telemetry.update();
-        }
-
-        if(tagOfInterest.id == left){
-            //left code
-            telemetry.addLine("Left");
-            telemetry.update();
-            robot.followTrajectorySequence(traj);
-            robot.followTrajectorySequence(Left);
-        }else if(tagOfInterest == null || tagOfInterest.id == middle){
-            //middle code
-            telemetry.addLine("Middle");
-            telemetry.update();
-            robot.followTrajectorySequence(traj);
-            robot.followTrajectorySequence(Middle);
-        }else if(tagOfInterest.id == right){
-            //right code
-            telemetry.addLine("Right");
-            telemetry.update();
-            robot.followTrajectorySequence(traj);
-            robot.followTrajectorySequence(Right);
-        }
-
-        /* You wouldn't have this in your autonomous, this is just to prevent the sample from ending */
-        //while (opModeIsActive()) {sleep(20);}
-    }
-
-    void tagToTelemetry(AprilTagDetection detection)
-    {
-        telemetry.addLine(String.format("\nDetected tag ID=%d", detection.id));
-        telemetry.addLine(String.format("Translation X: %.2f feet", detection.pose.x*FEET_PER_METER));
-        telemetry.addLine(String.format("Translation Y: %.2f feet", detection.pose.y*FEET_PER_METER));
-        telemetry.addLine(String.format("Translation Z: %.2f feet", detection.pose.z*FEET_PER_METER));
-        telemetry.addLine(String.format("Rotation Yaw: %.2f degrees", Math.toDegrees(detection.pose.yaw)));
-        telemetry.addLine(String.format("Rotation Pitch: %.2f degrees", Math.toDegrees(detection.pose.pitch)));
-        telemetry.addLine(String.format("Rotation Roll: %.2f degrees", Math.toDegrees(detection.pose.roll)));
     }
     public void myGoToHeightPOS(int slidePOS, double motorPower) {
         //to find slide position and motor position
@@ -314,32 +322,19 @@ public class Left23 extends LinearOpMode
         rightSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftSlide.setPower(motorPower);
         rightSlide.setPower(motorPower);
-        while(leftSlide.isBusy() || rightSlide.isBusy()){
-            //to find slide position and motor position
-            telemetry.addData("leftSlidePOS", leftSlide.getCurrentPosition());
-            telemetry.addData("rightSlidePOS", rightSlide.getCurrentPosition());
-            telemetry.addData("motorPower", motorPower);
-            telemetry.update();
+
+    }
+
+    public void AutoMoveClaw(){
+        if(((DistanceSensor) colorSensor).getDistance(DistanceUnit.CM)<5 && armServo2.getPosition() > 0.9) {
+            clawServo.setPosition(gc_clawClosed);
+            sleep(500);
+            SetArmServoPOS(0);
         }
     }
-    public void setArmServoPOS(double servoPos) {
+    public void SetArmServoPOS(double servoPos){
         armServo.setPosition(servoPos);
         armServo2.setPosition(servoPos);
     }
-    public void coneDeposit(int slidePOS){
-        NormalizedRGBA colors = colorSensor.getNormalizedColors();
 
-        clawServo.setPosition(gc_clawOpen);
-        sleep(500);
-        while(colors.red>0.03 && colors.blue>0.025){
-            telemetry.update();
-        }
-        clawServo.setPosition(gc_clawClosed);
-        setArmServoPOS(1.0);
-        sleep(1000);
-        myGoToHeightPOS(slidePOS, 1);
-        setArmServoPOS(1);
-        sleep(500);
-        clawServo.setPosition(gc_clawOpen);
-    }
 }
