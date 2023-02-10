@@ -43,7 +43,7 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
 
-@Autonomous (name="Right23", group="Linear Opmode", preselectTeleOp = "Gamepad3.0")
+@Autonomous (name="Right23", group="Linear Opmode")
 public class Right23 extends LinearOpMode
 {
     DcMotor FrontRight;
@@ -115,7 +115,7 @@ public class Right23 extends LinearOpMode
         armServo2.setDirection(Servo.Direction.REVERSE);
         setArmServoPOS(1);
         clawServo = hardwareMap.servo.get("ClawServo");
-        clawServo.setPosition(0.7);
+        clawServo.setPosition(0.65);
 
         colorSensor = hardwareMap.get(NormalizedColorSensor.class, "sensor_color");
 
@@ -151,37 +151,61 @@ public class Right23 extends LinearOpMode
         telemetry.setMsTransmissionInterval(50);
 
         TrajectorySequence traj = robot.trajectorySequenceBuilder(startPose)
-                .lineToSplineHeading(new Pose2d(-60, 0, Math.toRadians(0)))
-                .lineToSplineHeading(new Pose2d(-44, 0, Math.toRadians(0)))
-                .lineToSplineHeading(new Pose2d(-58, -2, Math.toRadians(45)))
-                .addTemporalMarker(() -> myGoToHeightPOS(2500, 0.75))
-                .addTemporalMarker(() -> setArmServoPOS(0))
-                .waitSeconds(1.25)
-                .addTemporalMarker(() -> coneDeposit(625))
-                .lineToSplineHeading(new Pose2d(-50, 27.5, Math.toRadians(90)))
+                //.splineToSplineHeading(new Pose2d(-40, 0, Math.toRadians(0)), Math.toRadians(0))
+                //.splineToSplineHeading(new Pose2d(-55, -5, Math.toRadians(45)), Math.toRadians(90))
+                .lineTo(new Vector2d(-59, 0))
+                .UNSTABLE_addTemporalMarkerOffset(-2, () -> myGoToHeightPOS(2500, 0.75))
+                .lineTo(new Vector2d(-58, -12.5))
+                .UNSTABLE_addTemporalMarkerOffset(-1,() -> setArmServoPOS(0))
+                .addTemporalMarker(() -> coneDeposit(700))
+                .lineToSplineHeading(new Pose2d(-51, 27.2, Math.toRadians(90)))
                 .addTemporalMarker(() -> {
                     clawServo.setPosition(gc_clawClosed);
-                    sleep(500);
+                    sleep(700);
                     myGoToHeightPOS(1500, 0.75);
                 })
-                .lineToSplineHeading(new Pose2d(-55, -5, Math.toRadians(45)))
-                .addTemporalMarker(() -> myGoToHeightPOS(2500, 0.75))
-                .addTemporalMarker(() -> setArmServoPOS(0))
-                .waitSeconds(1.25)
-                .addTemporalMarker(() -> coneDeposit(0))
+                .lineToSplineHeading(new Pose2d(-54.5, -14, Math.toRadians(0)))
+                .UNSTABLE_addTemporalMarkerOffset(-2, () -> myGoToHeightPOS(2500, 0.75))
+                .UNSTABLE_addTemporalMarkerOffset(-1, () -> setArmServoPOS(0))
+                .waitSeconds(0.2)
+                .addTemporalMarker(() -> coneDeposit(650))
+                .lineToSplineHeading(new Pose2d(-49.5, 26.5, Math.toRadians(90)))
+                .addTemporalMarker(() -> {
+                    clawServo.setPosition(gc_clawClosed);
+                    sleep(700);
+                    myGoToHeightPOS(1500, 0.75);
+                })
+                .lineToSplineHeading(new Pose2d(-54.5, -16, Math.toRadians(0)))
+                .UNSTABLE_addTemporalMarkerOffset(-2, () -> myGoToHeightPOS(2500, 0.75))
+                .UNSTABLE_addTemporalMarkerOffset(-1, () -> setArmServoPOS(0))
+                .waitSeconds(0.2)
+                .addTemporalMarker(() -> coneDeposit(650))
+                .lineToSplineHeading(new Pose2d(-49.5, 26.5, Math.toRadians(90)))
+                .addTemporalMarker(() -> {
+                    clawServo.setPosition(gc_clawClosed);
+                    sleep(700);
+                    myGoToHeightPOS(1500, 0.75);
+                })
+                /*
+                .turn(Math.toRadians(45))
+                .UNSTABLE_addTemporalMarkerOffset(-2, () -> myGoToHeightPOS(550, 0.75))
+                .UNSTABLE_addTemporalMarkerOffset(-1, () -> setArmServoPOS(0))
+
+                 */
                 .build();
 
         //Parking Trajectory depending on AprilTag:
         //traj.end() = new Pose2d(-54,-3,Math.toRadians(45))
         TrajectorySequence Left = robot.trajectorySequenceBuilder(traj.end())
-                .lineToSplineHeading(new Pose2d(-47, -26, Math.toRadians(0)))
-                .forward(24)
+                .turn(-45)
+                .forward(36)
                 .build();
         TrajectorySequence Middle = robot.trajectorySequenceBuilder(traj.end())
-                .lineToSplineHeading(new Pose2d(-28, 2, Math.toRadians(0)))
+                .turn(-45)
+                .forward(16)
                 .build();
         TrajectorySequence Right = robot.trajectorySequenceBuilder(traj.end())
-                .lineToSplineHeading(new Pose2d(-47, 24, Math.toRadians(90)))
+                .turn(-45)
                 .build();
         /*
          * The INIT-loop:
@@ -270,19 +294,19 @@ public class Right23 extends LinearOpMode
             telemetry.addLine("Left");
             telemetry.update();
             robot.followTrajectorySequence(traj);
-            robot.followTrajectorySequence(Left);
+           // robot.followTrajectorySequence(Left);
         }else if(tagOfInterest == null || tagOfInterest.id == middle){
             //middle code
             telemetry.addLine("Middle");
             telemetry.update();
             robot.followTrajectorySequence(traj);
-            robot.followTrajectorySequence(Middle);
+           // robot.followTrajectorySequence(Middle);
         }else if(tagOfInterest.id == right){
             //right code
             telemetry.addLine("Right");
             telemetry.update();
             robot.followTrajectorySequence(traj);
-            robot.followTrajectorySequence(Right);
+          //  robot.followTrajectorySequence(Right);
         }
 
         /* You wouldn't have this in your autonomous, this is just to prevent the sample from ending */
@@ -314,13 +338,7 @@ public class Right23 extends LinearOpMode
         rightSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftSlide.setPower(motorPower);
         rightSlide.setPower(motorPower);
-        while(leftSlide.isBusy() || rightSlide.isBusy()){
-            //to find slide position and motor position
-            telemetry.addData("leftSlidePOS", leftSlide.getCurrentPosition());
-            telemetry.addData("rightSlidePOS", rightSlide.getCurrentPosition());
-            telemetry.addData("motorPower", motorPower);
-            telemetry.update();
-        }
+
     }
     public void setArmServoPOS(double servoPos) {
         armServo.setPosition(servoPos);
