@@ -79,6 +79,7 @@ public class Gamepad3 extends LinearOpMode {
     Servo clawServo;
     Servo armServo;
     Servo armServo2;
+    Servo uDropServo;
 
     NormalizedColorSensor colorSensor;
     TouchSensor touchSensor;
@@ -114,6 +115,9 @@ public class Gamepad3 extends LinearOpMode {
 
         clawServo = hardwareMap.servo.get("ClawServo");
         clawServo.setPosition(gc_clawOpen);     // Claw Opened
+
+        uDropServo = hardwareMap.servo.get(("uDropServo"));
+        uDropServo.setPosition(0);
 
         touchSensor = hardwareMap.touchSensor.get("Touch");
         colorSensor = hardwareMap.get(NormalizedColorSensor.class, "sensor_color");
@@ -198,6 +202,7 @@ public class Gamepad3 extends LinearOpMode {
                 else {
                     AutoMoveClaw();
 
+
                 }
             }
             //movement code for the robot
@@ -227,6 +232,7 @@ public class Gamepad3 extends LinearOpMode {
                 }
                 clawServo.setPosition(gc_clawClosed);
                 SetArmServoPOS(1.0);
+                uDropServo.setPosition(0);
                 sleep(1000);
                 myGoToHeightPOS(0, 0.6);
                 while(leftSlide.getCurrentPosition()>400&&rightSlide.getCurrentPosition()>400){
@@ -272,39 +278,85 @@ public class Gamepad3 extends LinearOpMode {
 
             // GP2 DPAD Right - linear slide goes up, Arm Out for HIGH junction - 2500
             if(gamepad2.dpad_right) {
+                if ((leftSlide.getCurrentPosition() < 400 && rightSlide.getCurrentPosition() < 400))
+                {
+                    myGoToHeightPOS(400, 0.6);
+                }
+                uDropServo.setPosition(1);
                 myGoToHeightPOS(2500, 0.6);
                 SetArmServoPOS(0);
             }
 
             // GP2 DPAD Left - linear slide goes up, Arm Out for LOW junction - 300
             if(gamepad2.dpad_left) {
-                myGoToHeightPOS(300, 0.6);
+                if ((leftSlide.getCurrentPosition() < 400 && rightSlide.getCurrentPosition() < 400))
+                {
+                    myGoToHeightPOS(400, 0.6);
+                }
+                uDropServo.setPosition(1);
+                myGoToHeightPOS(500, 0.6);
                 SetArmServoPOS(0);
             }
 
             //  GP2 DPAD Up - linear slide goes up, Arm Out for MEDIUM junction - 1375
             if(gamepad2.dpad_up) {
+                if ((leftSlide.getCurrentPosition() < 400 && rightSlide.getCurrentPosition() < 400))
+                {
+                    myGoToHeightPOS(400, 0.6);
+                }
+                uDropServo.setPosition(1);
                 myGoToHeightPOS(1375, 0.6);
                 SetArmServoPOS(0);
             }
 
             //  GP2 DPAD Down - Claw down, Arm In for picking intake cone - 0
-            if(gamepad2.dpad_down){
+            if(gamepad2.dpad_down) {
+                uDropServo.setPosition(0);
                 myGoToHeightPOS(0, 0.6);
-                while(leftSlide.getCurrentPosition()>400&&rightSlide.getCurrentPosition()>400){
-                    if (sensitivity > 0) {
-                        vertical = (float) (vertical * 0.5);
-                        horizontal = (float) (horizontal * 0.5);
-                        pivot = (float) (pivot * 0.5);
-                    }
-                    FrontRight.setPower(0.7*(-pivot + (vertical - horizontal)));
-                    BackRight.setPower(0.7*(-pivot + vertical + horizontal));
-                    FrontLeft.setPower(0.7*(pivot + vertical + horizontal));
-                    BackLeft.setPower(0.7*(pivot + (vertical - horizontal)));
-                }
                 SetArmServoPOS(1);
                 clawServo.setPosition(gc_clawOpen);
             }
+
+                //small driving increments
+            /*
+                if (gamepad1.dpad_right) {
+                    FrontRight.setPower(-0.3);
+                    BackRight.setPower(0.3);
+                    FrontLeft.setPower(0.3);
+                    BackLeft.setPower(-0.3);
+                }
+
+
+                else if (gamepad1.dpad_left) {
+                    FrontRight.setPower(0.3);
+                    BackRight.setPower(-0.3);
+                    FrontLeft.setPower(-0.3);
+                    BackLeft.setPower(0.3);
+                }
+
+
+                else if (gamepad1.dpad_up) {
+                    FrontRight.setPower(0.3);
+                    BackRight.setPower(0.3);
+                    FrontLeft.setPower(0.3);
+                    BackLeft.setPower(0.3);
+                }
+
+
+                else if (gamepad1.dpad_down) {
+                    FrontRight.setPower(-0.3);
+                    BackRight.setPower(-0.3);
+                    FrontLeft.setPower(-0.3);
+                    BackLeft.setPower(-0.3);
+                }
+
+                else {
+                    FrontRight.setPower(-0);
+                    BackRight.setPower(-0);
+                    FrontLeft.setPower(-0);
+                    BackLeft.setPower(-0);
+                }
+*/
         }
     }
     public void myGoToHeightPOS(int slidePOS, double motorPower) {
@@ -322,7 +374,22 @@ public class Gamepad3 extends LinearOpMode {
         rightSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftSlide.setPower(motorPower);
         rightSlide.setPower(motorPower);
+        while(leftSlide.isBusy()||rightSlide.isBusy()){
+            horizontal = gamepad1.left_stick_x;
+            pivot = gamepad1.right_stick_x;
+            vertical = -gamepad1.left_stick_y;
+            sensitivity = gamepad1.left_trigger;
+            FrontRight.setPower(0.6*(-pivot + (vertical - horizontal)));
+            BackRight.setPower(0.6*(-pivot + vertical + horizontal));
+            FrontLeft.setPower(0.6*(pivot + vertical + horizontal));
+            BackLeft.setPower(0.6*(pivot + (vertical - horizontal)));
+            /*if(leftSlide.getCurrentPosition()>400)
+                uDropServo.setPosition(1);
+            else
+                uDropServo.setPosition(0);
 
+             */
+        }
     }
 
     public void AutoMoveClaw(){
